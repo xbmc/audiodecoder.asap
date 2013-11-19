@@ -16,9 +16,6 @@ include_directories(${XBMC_INCLUDE_DIR}
 set(ASAP_SOURCES src/ASAPCodec.cpp
                  lib/asap-3.1.5/asap.c)
 
-set(DEPLIBS ${PROJECT_SOURCE_DIR}/lib/asap-3.1.5/libasap.a)
-
 build_addon(audiodecoder.asap ASAP DEPLIBS)
-add_dependencies(audiodecoder.asap asap)
 
 include(CPack)
