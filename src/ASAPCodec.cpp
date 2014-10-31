@@ -18,11 +18,11 @@
  *
  */
 
-#include "xbmc/libXBMC_addon.h"
+#include "kodi/libXBMC_addon.h"
 
 extern "C" {
 #include "asap.h"
-#include "xbmc/xbmc_audiodec_dll.h"
+#include "kodi/kodi_audiodec_dll.h"
 
 ADDON::CHelper_libXBMC_addon *XBMC           = NULL;
 
