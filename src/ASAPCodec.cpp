@@ -18,100 +18,11 @@
  *
  */
 
-#include "libXBMC_addon.h"
+#include <kodi/addon-instance/AudioDecoder.h>
+#include <kodi/Filesystem.h>
 
 extern "C" {
 #include "asap.h"
-#include "kodi_audiodec_dll.h"
-
-ADDON::CHelper_libXBMC_addon *XBMC           = NULL;
-
-//-- Create -------------------------------------------------------------------
-// Called on load. Addon should fully initalize or return error status
-//-----------------------------------------------------------------------------
-ADDON_STATUS ADDON_Create(void* hdl, void* props)
-{
-  if (!XBMC)
-    XBMC = new ADDON::CHelper_libXBMC_addon;
-
-  if (!XBMC->RegisterMe(hdl))
-  {
-    delete XBMC, XBMC=NULL;
-    return ADDON_STATUS_PERMANENT_FAILURE;
-  }
-
-  return ADDON_STATUS_OK;
-}
-
-//-- Stop ---------------------------------------------------------------------
-// This dll must cease all runtime activities
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-void ADDON_Stop()
-{
-}
-
-//-- Destroy ------------------------------------------------------------------
-// Do everything before unload of this add-on
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-void ADDON_Destroy()
-{
-  XBMC=NULL;
-}
-
-//-- HasSettings --------------------------------------------------------------
-// Returns true if this add-on use settings
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-bool ADDON_HasSettings()
-{
-  return false;
-}
-
-//-- GetStatus ---------------------------------------------------------------
-// Returns the current Status of this visualisation
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-ADDON_STATUS ADDON_GetStatus()
-{
-  return ADDON_STATUS_OK;
-}
-
-//-- GetSettings --------------------------------------------------------------
-// Return the settings for XBMC to display
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-unsigned int ADDON_GetSettings(ADDON_StructSetting ***sSet)
-{
-  return 0;
-}
-
-//-- FreeSettings --------------------------------------------------------------
-// Free the settings struct passed from XBMC
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-
-void ADDON_FreeSettings()
-{
-}
-
-//-- SetSetting ---------------------------------------------------------------
-// Set a specific Setting value (called from XBMC)
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-ADDON_STATUS ADDON_SetSetting(const char *strSetting, const void* value)
-{
-  return ADDON_STATUS_OK;
-}
-
-//-- Announce -----------------------------------------------------------------
-// Receive announcements from XBMC
-// !!! Add-on master function !!!
-//-----------------------------------------------------------------------------
-void ADDON_Announce(const char *flag, const char *sender, const char *message, const void *data)
-{
-
 }
 
 struct ASAPContext {
@@ -122,170 +33,191 @@ struct ASAPContext {
   int day;
   int channels;
   int duration;
-  ASAP* asap;
+  ASAP* asap = nullptr;
 };
 
-void* Init(const char* strFile, unsigned int filecache, int* channels,
-           int* samplerate, int* bitspersample, int64_t* totaltime,
-           int* bitrate, AEDataFormat* format, const AEChannel** channelinfo)
+class CASAPCodec : public kodi::addon::CInstanceAudioDecoder,
+                   public kodi::addon::CAddonBase
 {
-  int track=0;
-  std::string toLoad(strFile);
-  if (toLoad.find(".asapstream") != std::string::npos)
+public:
+  CASAPCodec(KODI_HANDLE instance) :
+    CInstanceAudioDecoder(instance)
   {
-    size_t iStart=toLoad.rfind('-') + 1;
-    track = atoi(toLoad.substr(iStart, toLoad.size()-iStart-11).c_str());
-    //  The directory we are in, is the file
-    //  that contains the bitstream to play,
-    //  so extract it
-    size_t slash = toLoad.rfind('\\');
-    if (slash == std::string::npos)
-      slash = toLoad.rfind('/');
-    toLoad = toLoad.substr(0, slash);
   }
 
-  void* file = XBMC->OpenFile(toLoad.c_str(),0);
-  if (!file)
-    return NULL;
-
-  int len = XBMC->GetFileLength(file);
-  uint8_t* data = new uint8_t[len];
-  XBMC->ReadFile(file, data, len);
-  XBMC->CloseFile(file);
-
-  ASAPContext* result = new ASAPContext;
-  result->asap = ASAP_New();
-
-  // Now load the module
-  if (!ASAP_Load(result->asap, toLoad.c_str(), data, len))
+  virtual ~CASAPCodec()
   {
+    if (ctx.asap)
+      ASAP_Delete(ctx.asap);
+  }
+
+  virtual bool Init(const std::string& filename, unsigned int filecache,
+                    int& channels, int& samplerate,
+                    int& bitspersample, int64_t& totaltime,
+                    int& bitrate, AEDataFormat& format,
+                    std::vector<AEChannel>& channellist) override
+  {
+    int track=0;
+    std::string toLoad(filename);
+    if (toLoad.find(".asapstream") != std::string::npos)
+    {
+      size_t iStart=toLoad.rfind('-') + 1;
+      track = atoi(toLoad.substr(iStart, toLoad.size()-iStart-11).c_str())-1;
+      //  The directory we are in, is the file
+      //  that contains the bitstream to play,
+      //  so extract it
+      size_t slash = toLoad.rfind('\\');
+      if (slash == std::string::npos)
+        slash = toLoad.rfind('/');
+      toLoad = toLoad.substr(0, slash);
+    }
+
+    kodi::vfs::CFile file;
+    if (!file.OpenFile(toLoad,0))
+      return false;
+
+    int len = file.GetLength();
+    uint8_t* data = new uint8_t[len];
+    file.Read(data, len);
+    file.Close();
+
+    ctx.asap = ASAP_New();
+
+    // Now load the module
+    if (!ASAP_Load(ctx.asap, toLoad.c_str(), data, len))
+    {
+      delete[] data;
+      return false;
+    }
     delete[] data;
-    delete result;
+
+    const ASAPInfo* info = ASAP_GetInfo(ctx.asap);
+
+    channels = ASAPInfo_GetChannels(info);
+    samplerate = 44100;
+    bitspersample = 16;
+    totaltime = ASAPInfo_GetDuration(info, track);
+    format = AE_FMT_S16NE;
+    if (channels == 1)
+      channellist = { AE_CH_FC };
+    else
+      channellist = { AE_CH_FL, AE_CH_FR };
+    bitrate = 0;
+
+    ASAP_PlaySong(ctx.asap, track, totaltime);
+
+    return true;
   }
-  delete[] data;
 
-  const ASAPInfo* info = ASAP_GetInfo(result->asap);
-
-  *channels = ASAPInfo_GetChannels(info);
-  *samplerate = 44100;
-  *bitspersample = 16;
-  *totaltime = ASAPInfo_GetDuration(info, track);
-  *format = AE_FMT_S16NE;
-  *channelinfo = NULL;
-  *bitrate = 0;
-
-  ASAP_PlaySong(result->asap, track, *totaltime);
-
-  return result;
-}
-
-int ReadPCM(void* context, uint8_t* pBuffer, int size, int *actualsize)
-{
-  if (!context)
-    return 1;
-
-  ASAPContext* ctx = (ASAPContext*)context;
-
-  *actualsize = ASAP_Generate(ctx->asap, pBuffer, size, ASAPSampleFormat_S16_L_E);
-
-  return *actualsize == 0;
-}
-
-int64_t Seek(void* context, int64_t time)
-{
-  if (!context)
-    return 1;
-
-  ASAPContext* ctx = (ASAPContext*)context;
-
-  ASAP_Seek(ctx->asap, time);
-
-  return time;
-}
-
-bool DeInit(void* context)
-{
-  if (!context)
-    return 1;
-
-  ASAPContext* ctx = (ASAPContext*)context;
-  ASAP_Delete(ctx->asap);
-  delete ctx;
-
-  return true;
-}
-
-bool ReadTag(const char* strFile, char* title, char* artist,
-             int* length)
-{
-  int track=1;
-  std::string toLoad(strFile);
-  if (toLoad.find(".asapstream") != std::string::npos)
+  virtual int ReadPCM(uint8_t* buffer, int size, int& actualsize) override
   {
-    size_t iStart=toLoad.rfind('-') + 1;
-    track = atoi(toLoad.substr(iStart, toLoad.size()-iStart-11).c_str());
-    //  The directory we are in, is the file
-    //  that contains the bitstream to play,
-    //  so extract it
-    size_t slash = toLoad.rfind('\\');
-    if (slash == std::string::npos)
-      slash = toLoad.rfind('/');
-    toLoad = toLoad.substr(0, slash);
+    actualsize = ASAP_Generate(ctx.asap, buffer, size, ASAPSampleFormat_S16_L_E);
+
+    return actualsize == 0;
   }
-  void* file = XBMC->OpenFile(toLoad.c_str(), 0);
-  if (!file)
-    return false;
 
-  int len = XBMC->GetFileLength(file);
-  uint8_t* data = new uint8_t[len];
-  XBMC->ReadFile(file, data, len);
-  XBMC->CloseFile(file);
-
-  ASAP* asap = ASAP_New();
-
-  // Now load the module
-  if (!ASAP_Load(asap, strFile, data, len))
+  virtual int64_t Seek(int64_t time) override
   {
+    ASAP_Seek(ctx.asap, time);
+
+    return time;
+  }
+
+  virtual bool ReadTag(const std::string& filename, std::string& title,
+                       std::string& artist, int& length) override
+  {
+    int track=1;
+    std::string toLoad(filename);
+    if (toLoad.find(".asapstream") != std::string::npos)
+    {
+      size_t iStart=toLoad.rfind('-') + 1;
+      track = atoi(toLoad.substr(iStart, toLoad.size()-iStart-11).c_str());
+      //  The directory we are in, is the file
+      //  that contains the bitstream to play,
+      //  so extract it
+      size_t slash = toLoad.rfind('\\');
+      if (slash == std::string::npos)
+        slash = toLoad.rfind('/');
+      toLoad = toLoad.substr(0, slash);
+    }
+
+    kodi::vfs::CFile file;
+    if (!file.OpenFile(toLoad, 0))
+      return false;
+
+    int len = file.GetLength();
+    uint8_t* data = new uint8_t[len];
+    file.Read(data, len);
+    file.Close();
+
+    ASAP* asap = ASAP_New();
+
+    // Now load the module
+    if (!ASAP_Load(asap, toLoad.c_str(), data, len))
+    {
+      delete[] data;
+      return false;
+    }
+
     delete[] data;
-    return false;
-  }
 
-  delete[] data;
+    const ASAPInfo* info = ASAP_GetInfo(asap);
+    artist = ASAPInfo_GetAuthor(info);
+    title = ASAPInfo_GetTitleOrFilename(info);
+    length = ASAPInfo_GetDuration(info, track);
 
-  const ASAPInfo* info = ASAP_GetInfo(asap);
-  strcpy(artist, ASAPInfo_GetAuthor(info));
-  strcpy(title, ASAPInfo_GetTitleOrFilename(info));
-  *length = ASAPInfo_GetDuration(info, track);
-
-  return true;
-}
-
-int TrackCount(const char* strFile)
-{
-  void* file = XBMC->OpenFile(strFile, 0);
-  if (!file)
-    return 1;
-
-  int len = XBMC->GetFileLength(file);
-  uint8_t* data = new uint8_t[len];
-  XBMC->ReadFile(file, data, len);
-  XBMC->CloseFile(file);
-
-  ASAP* asap = ASAP_New();
-
-  // Now load the module
-  if (!ASAP_Load(asap, strFile, data, len))
-  {
     ASAP_Delete(asap);
-    delete[] data;
-    return 1;
+
+    return true;
   }
-  delete[] data;
 
-  const ASAPInfo* info = ASAP_GetInfo(asap);
-  int result = ASAPInfo_GetSongs(info);
-  ASAP_Delete(asap);
+  virtual int TrackCount(const std::string& fileName) override
+  {
+    kodi::vfs::CFile file;
+    if (!file.OpenFile(fileName,0))
+      return 1;
 
-  return result;
-}
-}
+    int len = file.GetLength();
+    uint8_t* data = new uint8_t[len];
+    file.Read(data, len);
+    file.Close();
+
+    ASAP* asap = ASAP_New();
+
+    // Now load the module
+    if (!ASAP_Load(asap, fileName.c_str(), data, len))
+    {
+      ASAP_Delete(asap);
+      delete[] data;
+      return 1;
+    }
+    delete[] data;
+
+    const ASAPInfo* info = ASAP_GetInfo(asap);
+    int result = ASAPInfo_GetSongs(info);
+    ASAP_Delete(asap);
+
+    return result;
+  }
+
+private:
+  ASAPContext ctx;
+};
+
+
+class ATTRIBUTE_HIDDEN CMyAddon : public kodi::addon::CAddonBase
+{
+public:
+  CMyAddon() { }
+  virtual ADDON_STATUS CreateInstance(int instanceType, std::string instanceID, KODI_HANDLE instance, KODI_HANDLE& addonInstance) override
+  {
+    addonInstance = new CASAPCodec(instance);
+    return ADDON_STATUS_OK;
+  }
+  virtual ~CMyAddon()
+  {
+  }
+};
+
+
+ADDONCREATOR(CMyAddon);
