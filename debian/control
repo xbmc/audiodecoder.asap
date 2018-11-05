@@ -1,0 +1,21 @@
+Source: kodi-audiodecoder-asap
+Priority: extra
+Maintainer: Arne Morten Kvarving <cptspiff@gmail.com>
+Build-Depends: debhelper (>= 8.0.0), cmake, kodi-addon-dev,
+               libkodiplatform-dev (>= 17.1.0)
+Standards-Version: 3.9.6
+Section: libs
+
+Package: kodi-audiodecoder-asap
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: ASAP audio decoder for Kodi
+  ASAP audio decoder for Kodi
+
+Package: kodi-audiodecoder-asap-dbg
+Section: debug
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: debug symbols for ASAP audio decoder for Kodi
+  debug symbols for ASAP audio decoder for Kodi
