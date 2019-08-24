@@ -36,8 +36,7 @@ struct ASAPContext {
   ASAP* asap = nullptr;
 };
 
-class CASAPCodec : public kodi::addon::CInstanceAudioDecoder,
-                   public kodi::addon::CAddonBase
+class ATTRIBUTE_HIDDEN CASAPCodec : public kodi::addon::CInstanceAudioDecoder
 {
 public:
   CASAPCodec(KODI_HANDLE instance) :
