@@ -50,11 +50,11 @@ public:
       ASAP_Delete(ctx.asap);
   }
 
-  virtual bool Init(const std::string& filename, unsigned int filecache,
-                    int& channels, int& samplerate,
-                    int& bitspersample, int64_t& totaltime,
-                    int& bitrate, AEDataFormat& format,
-                    std::vector<AEChannel>& channellist) override
+  bool Init(const std::string& filename, unsigned int filecache,
+            int& channels, int& samplerate,
+            int& bitspersample, int64_t& totaltime,
+            int& bitrate, AEDataFormat& format,
+            std::vector<AEChannel>& channellist) override
   {
     int track=0;
     std::string toLoad(filename);
@@ -108,22 +108,22 @@ public:
     return true;
   }
 
-  virtual int ReadPCM(uint8_t* buffer, int size, int& actualsize) override
+  int ReadPCM(uint8_t* buffer, int size, int& actualsize) override
   {
     actualsize = ASAP_Generate(ctx.asap, buffer, size, ASAPSampleFormat_S16_L_E);
 
     return actualsize == 0;
   }
 
-  virtual int64_t Seek(int64_t time) override
+  int64_t Seek(int64_t time) override
   {
     ASAP_Seek(ctx.asap, time);
 
     return time;
   }
 
-  virtual bool ReadTag(const std::string& filename, std::string& title,
-                       std::string& artist, int& length) override
+  bool ReadTag(const std::string& filename, std::string& title,
+               std::string& artist, int& length) override
   {
     int track=1;
     std::string toLoad(filename);
@@ -170,7 +170,7 @@ public:
     return true;
   }
 
-  virtual int TrackCount(const std::string& fileName) override
+  int TrackCount(const std::string& fileName) override
   {
     kodi::vfs::CFile file;
     if (!file.OpenFile(fileName,0))
@@ -207,15 +207,13 @@ private:
 class ATTRIBUTE_HIDDEN CMyAddon : public kodi::addon::CAddonBase
 {
 public:
-  CMyAddon() { }
-  virtual ADDON_STATUS CreateInstance(int instanceType, std::string instanceID, KODI_HANDLE instance, KODI_HANDLE& addonInstance) override
+  CMyAddon() = default;
+  ADDON_STATUS CreateInstance(int instanceType, std::string instanceID, KODI_HANDLE instance, KODI_HANDLE& addonInstance) override
   {
     addonInstance = new CASAPCodec(instance);
     return ADDON_STATUS_OK;
   }
-  virtual ~CMyAddon()
-  {
-  }
+  virtual ~CMyAddon() = default;
 };
 
 
