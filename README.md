@@ -3,7 +3,8 @@
 This is a [Kodi](http://kodi.tv) audio decoder addon for SAP files.
 
 [![Build Status](https://travis-ci.org/xbmc/audiodecoder.asap.svg?branch=master)](https://travis-ci.org/xbmc/audiodecoder.asap)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/xbmc/audiodecoder.asap?svg=true)](https://ci.appveyor.com/project/xbmc/audiodecoder-asap)
+[![Build Status](https://dev.azure.com/teamkodi/binary-addons/_apis/build/status/xbmc.audiodecoder.asap?branchName=Leia)](https://dev.azure.com/teamkodi/binary-addons/_build/latest?definitionId=4&branchName=Leia)
+<!--- [![Build Status](https://ci.appveyor.com/api/projects/status/github/xbmc/audiodecoder.asap?svg=true)](https://ci.appveyor.com/project/xbmc/audiodecoder-asap) -->
 
 ## Build instructions
 
