@@ -16,7 +16,7 @@
     <summary lang="en">ASAP - Another Slight Atari Player</summary>
     <description lang="en">ASAP (Another Slight Atari Player) plays on Kodi and converts 8-bit Atari music (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) on modern computers and mobile devices.</description>
     <platform>@PLATFORM@</platform>
-    <license>GPL-2.0</license>
+    <license>GPL-2.0-or-later</license>
     <source>https://github.com/xbmc/audiodecoder.asap</source>
     <assets>
       <icon>icon.png</icon>
