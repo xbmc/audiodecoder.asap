@@ -5,6 +5,7 @@ This is a [Kodi](https://kodi.tv) audio decoder addon for SAP files.
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/License-GPL%20v2+-blue.svg)](LICENSE.md)
 [![Build Status](https://travis-ci.org/xbmc/audiodecoder.asap.svg?branch=Matrix)](https://travis-ci.org/xbmc/audiodecoder.asap/branches)
 [![Build Status](https://dev.azure.com/teamkodi/binary-addons/_apis/build/status/xbmc.audiodecoder.asap?branchName=Matrix)](https://dev.azure.com/teamkodi/binary-addons/_build/latest?definitionId=4&branchName=Matrix)
+[![Build Status](https://jenkins.kodi.tv/view/Addons/job/xbmc/job/audiodecoder.asap/job/Matrix/badge/icon)](https://jenkins.kodi.tv/blue/organizations/jenkins/xbmc%2Faudiodecoder.asap/branches/)
 <!--- [![Build Status](https://ci.appveyor.com/api/projects/status/github/xbmc/audiodecoder.asap?branch=Matrix&svg=true)](https://ci.appveyor.com/project/xbmc/audiodecoder-asap?branch=Matrix) -->
 
 ## Build instructions
