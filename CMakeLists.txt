@@ -11,6 +11,8 @@ include_directories(${KODI_INCLUDE_DIR}/..
 set(ASAP_SOURCES src/ASAPCodec.cpp
                  lib/asap-4.0.0/asap.c)
 
+set(ASAP_HEADERS src/ASAPCodec.h)
+
 build_addon(audiodecoder.asap ASAP DEPLIBS)
 
 include(CPack)
