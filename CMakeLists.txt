@@ -6,10 +6,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 find_package(Kodi REQUIRED)
 
 include_directories(${KODI_INCLUDE_DIR}/..
-                    ${PROJECT_SOURCE_DIR}/lib/asap-4.0.0)
+                    ${PROJECT_SOURCE_DIR}/lib/asap-code)
 
 set(ASAP_SOURCES src/ASAPCodec.cpp
-                 lib/asap-4.0.0/asap.c)
+                 lib/asap-code/asap.c)
 
 set(ASAP_HEADERS src/ASAPCodec.h)
 
