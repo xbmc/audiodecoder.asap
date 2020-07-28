@@ -40,8 +40,8 @@ public:
   bool Init(const std::string& filename, unsigned int filecache,
             int& channels, int& samplerate,
             int& bitspersample, int64_t& totaltime,
-            int& bitrate, AEDataFormat& format,
-            std::vector<AEChannel>& channellist) override
+            int& bitrate, AudioEngineDataFormat& format,
+            std::vector<AudioEngineChannel>& channellist) override
   {
     int track=0;
     std::string toLoad(filename);
@@ -83,11 +83,11 @@ public:
     samplerate = 44100;
     bitspersample = 16;
     totaltime = ASAPInfo_GetDuration(info, track);
-    format = AE_FMT_S16NE;
+    format = AUDIOENGINE_FMT_S16NE;
     if (channels == 1)
-      channellist = { AE_CH_FC };
+      channellist = { AUDIOENGINE_CH_FC };
     else
-      channellist = { AE_CH_FL, AE_CH_FR };
+      channellist = { AUDIOENGINE_CH_FL, AUDIOENGINE_CH_FR };
     bitrate = 0;
 
     ASAP_PlaySong(ctx.asap, track, totaltime);
@@ -109,8 +109,7 @@ public:
     return time;
   }
 
-  bool ReadTag(const std::string& filename, std::string& title,
-               std::string& artist, int& length) override
+  bool ReadTag(const std::string& filename, kodi::addon::AudioDecoderInfoTag& tag) override
   {
     int track=1;
     std::string toLoad(filename);
@@ -148,9 +147,9 @@ public:
     delete[] data;
 
     const ASAPInfo* info = ASAP_GetInfo(asap);
-    artist = ASAPInfo_GetAuthor(info);
-    title = ASAPInfo_GetTitleOrFilename(info);
-    length = ASAPInfo_GetDuration(info, track);
+    tag.SetArtist(ASAPInfo_GetAuthor(info));
+    tag.SetTitle(ASAPInfo_GetTitleOrFilename(info));
+    tag.SetDuration(ASAPInfo_GetDuration(info, track));
 
     ASAP_Delete(asap);
 
