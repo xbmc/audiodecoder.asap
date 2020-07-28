@@ -98,7 +98,7 @@ int64_t CASAPCodec::Seek(int64_t time)
 
 bool CASAPCodec::ReadTag(const std::string& filename, kodi::addon::AudioDecoderInfoTag& tag)
 {
-  int track = 1;
+  int track = 0;
   std::string toLoad(filename);
   if (toLoad.find(".asapstream") != std::string::npos)
   {
@@ -136,7 +136,12 @@ bool CASAPCodec::ReadTag(const std::string& filename, kodi::addon::AudioDecoderI
   const ASAPInfo* info = ASAP_GetInfo(asap);
   tag.SetArtist(ASAPInfo_GetAuthor(info));
   tag.SetTitle(ASAPInfo_GetTitleOrFilename(info));
-  tag.SetDuration(ASAPInfo_GetDuration(info, track));
+  tag.SetDuration(ASAPInfo_GetDuration(info, track) / 1000);
+  if (ASAPInfo_GetYear(info) > 0)
+    tag.SetReleaseDate(std::to_string(ASAPInfo_GetYear(info)));
+  tag.SetChannels(ASAPInfo_GetChannels(info));
+  tag.SetSamplerate(44100);
+  tag.SetTrack(track);
 
   ASAP_Delete(asap);
 
