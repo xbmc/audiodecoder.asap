@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005-2020 Team Kodi (https://kodi.tv)
+ *  Copyright (C) 2005-2021 Team Kodi (https://kodi.tv)
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
  *  See LICENSE.md for more information.
@@ -104,6 +104,7 @@ bool CASAPCodec::ReadTag(const std::string& filename, kodi::addon::AudioDecoderI
   {
     size_t iStart = toLoad.rfind('-') + 1;
     track = atoi(toLoad.substr(iStart, toLoad.size() - iStart - 11).c_str());
+
     //  The directory we are in, is the file
     //  that contains the bitstream to play,
     //  so extract it
@@ -136,7 +137,8 @@ bool CASAPCodec::ReadTag(const std::string& filename, kodi::addon::AudioDecoderI
   const ASAPInfo* info = ASAP_GetInfo(asap);
   tag.SetArtist(ASAPInfo_GetAuthor(info));
   tag.SetTitle(ASAPInfo_GetTitleOrFilename(info));
-  tag.SetDuration(ASAPInfo_GetDuration(info, track) / 1000);
+  // Kodi gives them beginning with 1, ASAP there need to start with 0, so we reduce it by one.
+  tag.SetDuration(ASAPInfo_GetDuration(info, track > 0 ? track - 1 : 0) / 1000);
   if (ASAPInfo_GetYear(info) > 0)
     tag.SetReleaseDate(std::to_string(ASAPInfo_GetYear(info)));
   tag.SetChannels(ASAPInfo_GetChannels(info));
