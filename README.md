@@ -5,6 +5,7 @@
 ------------------
 
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/License-GPL%20v2+-blue.svg)](LICENSE.md)
+[![Build and run tests](https://github.com/xbmc/audiodecoder.asap/actions/workflows/build.yml/badge.svg?branch=Nexus)](https://github.com/xbmc/audiodecoder.asap/actions/workflows/build.yml)
 [![Build Status](https://dev.azure.com/teamkodi/binary-addons/_apis/build/status/xbmc.audiodecoder.asap?branchName=Nexus)](https://dev.azure.com/teamkodi/binary-addons/_build/latest?definitionId=4&branchName=Nexus)
 [![Build Status](https://jenkins.kodi.tv/view/Addons/job/xbmc/job/audiodecoder.asap/job/Nexus/badge/icon)](https://jenkins.kodi.tv/blue/organizations/jenkins/xbmc%2Faudiodecoder.asap/branches/)
 <!--- [![Build Status](https://ci.appveyor.com/api/projects/status/github/xbmc/audiodecoder.asap?branch=Nexus&svg=true)](https://ci.appveyor.com/project/xbmc/audiodecoder-asap?branch=Nexus) -->
