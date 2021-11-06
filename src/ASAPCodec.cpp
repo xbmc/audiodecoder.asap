@@ -31,19 +31,7 @@ bool CASAPCodec::Init(const std::string& filename,
                       std::vector<AudioEngineChannel>& channellist)
 {
   int track = 0;
-  std::string toLoad(filename);
-  if (toLoad.find(".asapstream") != std::string::npos)
-  {
-    size_t iStart = toLoad.rfind('-') + 1;
-    track = atoi(toLoad.substr(iStart, toLoad.size() - iStart - 11).c_str()) - 1;
-    //  The directory we are in, is the file
-    //  that contains the bitstream to play,
-    //  so extract it
-    size_t slash = toLoad.rfind('\\');
-    if (slash == std::string::npos)
-      slash = toLoad.rfind('/');
-    toLoad = toLoad.substr(0, slash);
-  }
+  std::string toLoad = kodi::addon::CInstanceAudioDecoder::GetTrack("asap", filename, track);
 
   kodi::vfs::CFile file;
   if (!file.OpenFile(toLoad, 0))
@@ -82,11 +70,11 @@ bool CASAPCodec::Init(const std::string& filename,
   return true;
 }
 
-int CASAPCodec::ReadPCM(uint8_t* buffer, int size, int& actualsize)
+int CASAPCodec::ReadPCM(uint8_t* buffer, size_t size, size_t& actualsize)
 {
   actualsize = ASAP_Generate(ctx.asap, buffer, size, ASAPSampleFormat_S16_L_E);
 
-  return actualsize == 0;
+  return actualsize == 0 ? AUDIODECODER_READ_EOF : AUDIODECODER_READ_SUCCESS;
 }
 
 int64_t CASAPCodec::Seek(int64_t time)
@@ -99,20 +87,7 @@ int64_t CASAPCodec::Seek(int64_t time)
 bool CASAPCodec::ReadTag(const std::string& filename, kodi::addon::AudioDecoderInfoTag& tag)
 {
   int track = 0;
-  std::string toLoad(filename);
-  if (toLoad.find(".asapstream") != std::string::npos)
-  {
-    size_t iStart = toLoad.rfind('-') + 1;
-    track = atoi(toLoad.substr(iStart, toLoad.size() - iStart - 11).c_str());
-
-    //  The directory we are in, is the file
-    //  that contains the bitstream to play,
-    //  so extract it
-    size_t slash = toLoad.rfind('\\');
-    if (slash == std::string::npos)
-      slash = toLoad.rfind('/');
-    toLoad = toLoad.substr(0, slash);
-  }
+  const std::string toLoad = kodi::addon::CInstanceAudioDecoder::GetTrack("asap", filename, track);
 
   kodi::vfs::CFile file;
   if (!file.OpenFile(toLoad, 0))
@@ -181,7 +156,7 @@ int CASAPCodec::TrackCount(const std::string& fileName)
 
 //------------------------------------------------------------------------------
 
-class ATTRIBUTE_HIDDEN CMyAddon : public kodi::addon::CAddonBase
+class ATTR_DLL_LOCAL CMyAddon : public kodi::addon::CAddonBase
 {
 public:
   CMyAddon() = default;
