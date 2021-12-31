@@ -29,7 +29,7 @@ struct ASAPContext
 class ATTR_DLL_LOCAL CASAPCodec : public kodi::addon::CInstanceAudioDecoder
 {
 public:
-  CASAPCodec(KODI_HANDLE instance, const std::string& version);
+  CASAPCodec(const kodi::addon::IInstanceInfo& instance);
   virtual ~CASAPCodec();
 
   bool Init(const std::string& filename,
