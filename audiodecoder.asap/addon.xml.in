@@ -23,6 +23,7 @@
     <summary lang="de_DE">ASAP - Another Slight Atari Player</summary>
     <summary lang="en_GB">ASAP - Another Slight Atari Player</summary>
     <summary lang="es_ES">ASAP - Otro Reproductor Ligero de Atari</summary>
+    <summary lang="fi_FI">ASAP - Another Slight Atari Player</summary>
     <summary lang="hr_HR">ASAP - Another Slight Atari Player</summary>
     <summary lang="ko_KR">ASAP - Another Slight Atari Player</summary>
     <summary lang="pl_PL">ASAP - Another Slight Atari Player</summary>
@@ -33,6 +34,7 @@
     <description lang="de_DE">ASAP (Another Slight Atari Player) konvertiert 8-Bit-Atari-Musik (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) zum nötigen Format und zur Wiedergabe in Kodi auf modernen Computern und Mobilgeräten.</description>
     <description lang="en_GB">ASAP (Another Slight Atari Player) plays on Kodi and converts 8-bit Atari music (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) on modern computers and mobile devices.</description>
     <description lang="es_ES">ASAP (Another Slight Atari Player - Otro Reproductor Ligero de Atari) reproduce en Kodi y convierte musica de Atari de 8-bits (extensiones sap, cmc, mpt, rmt, tmc, ...) en ordenadores modernos y dispositivos móviles.</description>
+    <description lang="fi_FI">ASAP (Another Slight Atari Player) toistaa ja muuntaa Kodissa 8-bittisiä Atari-musiikkitiedostoja (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) nykyaikaisilla tietokoneilla ja mobillilaitteilla.</description>
     <description lang="hr_HR">ASAP (Another Slight Atari Player) se izvodi na Kodiju i pretvara 8-bitnu Atari glazbu (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) na modernim računalima i mobilnim uređajima.</description>
     <description lang="ko_KR">ASAP(Another Slight Atari Player)는 Kodi에서 재생되며 최신 컴퓨터 및 모바일 장치에서 8비트 Atari 음악(*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...)을 변환합니다.</description>
     <description lang="pl_PL">ASAP (Another Slight Atari Player) odtwarza na Kodi i konwertuje 8-bitową muzykę Atari (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) na nowoczesnych komputerach i urządzeniach mobilnych.</description>
