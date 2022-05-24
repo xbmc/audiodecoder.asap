@@ -35,7 +35,7 @@ bool CASAPCodec::Init(const std::string& filename,
                       std::vector<AudioEngineChannel>& channellist)
 {
   int track = 0;
-  std::string toLoad = kodi::addon::CInstanceAudioDecoder::GetTrack("asap", filename, track);
+  const std::string toLoad = kodi::addon::CInstanceAudioDecoder::GetTrack("asap", filename, track);
 
   kodi::vfs::CFile file;
   if (!file.OpenFile(toLoad, 0))
@@ -69,7 +69,7 @@ bool CASAPCodec::Init(const std::string& filename,
     channellist = {AUDIOENGINE_CH_FL, AUDIOENGINE_CH_FR};
   bitrate = 0;
 
-  ASAP_PlaySong(ctx.asap, track, totaltime);
+  ASAP_PlaySong(ctx.asap, (track > 0 ? track - 1 : 0), totaltime);
 
   return true;
 }
