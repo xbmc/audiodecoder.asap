@@ -1,7 +1,7 @@
 /*
  * PlayerService.java - ASAP for Android
  *
- * Copyright (C) 2010-2019  Piotr Fusik
+ * Copyright (C) 2010-2021  Piotr Fusik
  *
  * This file is part of ASAP (Another Slight Atari Player),
  * see http://asap.sourceforge.net
@@ -29,16 +29,20 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.media.MediaMetadata;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.widget.MediaController;
@@ -54,17 +58,16 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 {
 	// User interface -----------------------------------------------------------------------------------------
 
-	private static final int NOTIFICATION_ID = 1;
+	private static final String ACTION_PLAY = "asap.intent.action.PLAY";
+	private static final String ACTION_PAUSE = "asap.intent.action.PAUSE";
+	private static final String ACTION_NEXT = "asap.intent.action.NEXT";
+	private static final String ACTION_PREVIOUS = "asap.intent.action.PREVIOUS";
 
 	private final Handler toastHandler = new Handler();
 
 	private void showError(final int messageId)
 	{
-		toastHandler.post(new Runnable() {
-			public void run() {
-				Toast.makeText(PlayerService.this, messageId, Toast.LENGTH_SHORT).show();
-			}
-		});
+		toastHandler.post(() -> Toast.makeText(PlayerService.this, messageId, Toast.LENGTH_SHORT).show());
 	}
 
 	private void showInfo()
@@ -72,25 +75,61 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 		sendBroadcast(new Intent(Player.ACTION_SHOW_INFO));
 	}
 
-	private void showNotification()
+	private PendingIntent activityIntent;
+	private MediaSession mediaSession;
+
+	private NotificationManager getNotificationManager()
 	{
-		PendingIntent intent = PendingIntent.getActivity(this, 0, new Intent(this, Player.class), 0);
-		Notification.Builder builder = new Notification.Builder(this)
+		return (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+	}
+
+	private Notification.Action getNotificationAction(int icon, int titleResource, String action)
+	{
+		PendingIntent intent = PendingIntent.getService(this, 0, new Intent(action, null, this, PlayerService.class), 0);
+		return new Notification.Action(icon, getString(titleResource), intent);
+	}
+
+	private void showNotification(boolean start)
+	{
+		Notification.Builder builder;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			final String CHANNEL_ID = "NOW_PLAYING";
+			if (start) {
+				NotificationChannel channel = new NotificationChannel(CHANNEL_ID, getString(R.string.notification_channel), NotificationManager.IMPORTANCE_LOW);
+				getNotificationManager().createNotificationChannel(channel);
+			}
+			builder = new Notification.Builder(this, CHANNEL_ID);
+		}
+		else
+			builder = new Notification.Builder(this);
+		Notification notification = builder
 			.setSmallIcon(R.drawable.icon)
 			.setContentTitle(info.getTitleOrFilename())
 			.setContentText(info.getAuthor())
-			.setContentIntent(intent)
-			.setOngoing(true);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			builder.setVisibility(Notification.VISIBILITY_PUBLIC);
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				final String CHANNEL_ID = "NOW_PLAYING";
-				NotificationChannel channel = new NotificationChannel(CHANNEL_ID, getString(R.string.notification_channel), NotificationManager.IMPORTANCE_LOW);
-				((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(channel);
-				builder.setChannelId(CHANNEL_ID);
-			}
-		}
-		startForeground(NOTIFICATION_ID, builder.getNotification());
+			.setContentIntent(activityIntent)
+			.setStyle(new Notification.MediaStyle()
+				.setMediaSession(mediaSession.getSessionToken())
+				.setShowActionsInCompactView(0, 1, 2))
+			.setVisibility(Notification.VISIBILITY_PUBLIC)
+			.addAction(getNotificationAction(android.R.drawable.ic_media_previous, R.string.notification_previous, ACTION_PREVIOUS))
+			.addAction(isPaused()
+				? getNotificationAction(android.R.drawable.ic_media_play, R.string.notification_play, ACTION_PLAY)
+				: getNotificationAction(android.R.drawable.ic_media_pause, R.string.notification_pause, ACTION_PAUSE))
+			.addAction(getNotificationAction(android.R.drawable.ic_media_next, R.string.notification_next, ACTION_NEXT))
+			.build();
+		final int NOTIFICATION_ID = 1;
+		if (start)
+			startForeground(NOTIFICATION_ID, notification);
+		else
+			getNotificationManager().notify(NOTIFICATION_ID, notification);
+	}
+
+	private void setPlaybackState(int state, float speed, long actions)
+	{
+		mediaSession.setPlaybackState(new PlaybackState.Builder()
+			.setState(state, asap.getPosition(), speed)
+			.setActions(actions)
+			.build());
 	}
 
 
@@ -121,6 +160,17 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 		}
 	}
 
+	private boolean setSearchPlaylist(String query)
+	{
+		FileInfo[] infos = FileInfo.listIndex(this, query);
+		if (infos.length == 0)
+			return false;
+		playlist.clear();
+		for (FileInfo info : infos)
+			playlist.add(Util.getAsmaUri(info.filename));
+		return true;
+	}
+
 	private int getPlaylistIndex()
 	{
 		return playlist.indexOf(uri);
@@ -129,18 +179,18 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 
 	// Playback -----------------------------------------------------------------------------------------------
 
-	private static final int ACTION_STOP = 0;
-	private static final int ACTION_LOAD = 1;
-	private static final int ACTION_PLAY = 2;
-	private static final int ACTION_PAUSE = 3;
-	private static final int ACTION_NEXT = 4;
-	private static final int ACTION_PREV = 5;
-	private int action = ACTION_STOP;
+	private static final int COMMAND_STOP = 0;
+	private static final int COMMAND_LOAD = 1;
+	private static final int COMMAND_PLAY = 2;
+	private static final int COMMAND_PAUSE = 3;
+	private static final int COMMAND_NEXT = 4;
+	private static final int COMMAND_PREV = 5;
+	private int command = COMMAND_STOP;
 	private Thread thread = null;
 
-	private synchronized void setAction(int action)
+	private synchronized void setCommand(int command)
 	{
-		this.action = action;
+		this.command = command;
 		if (thread != null && thread.isAlive())
 			notify();
 		else {
@@ -152,7 +202,7 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 	private void stop()
 	{
 		if (thread != null) {
-			setAction(ACTION_STOP);
+			setCommand(COMMAND_STOP);
 			try {
 				thread.join();
 			}
@@ -212,15 +262,17 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 		}
 
 		// load into ASAP
+		int songs;
 		try {
 			asap.load(filename, module, moduleLen);
 			info = asap.getInfo();
+			songs = info.getSongs();
 			switch (song) {
 			case SONG_DEFAULT:
 				song = info.getDefaultSong();
 				break;
 			case SONG_LAST:
-				song = info.getSongs() - 1;
+				song = songs - 1;
 				break;
 			default:
 				break;
@@ -232,16 +284,38 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 			return false;
 		}
 
+		// put metadata into mediaSession
+		MediaMetadata.Builder metadata = new MediaMetadata.Builder()
+			.putString(MediaMetadata.METADATA_KEY_TITLE, info.getTitleOrFilename());
+		String author = info.getAuthor();
+		if (author.length() > 0)
+			metadata.putString(MediaMetadata.METADATA_KEY_ARTIST, author);
+		String date = info.getDate();
+		if (date.length() > 0)
+			metadata.putString(MediaMetadata.METADATA_KEY_DATE, date);
+		int duration = info.getDuration(song);
+		if (duration > 0)
+			metadata.putLong(MediaMetadata.METADATA_KEY_DURATION, duration);
+		if (songs > 1) {
+			metadata.putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, song + 1);
+			metadata.putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, songs);
+		}
+		int year = info.getYear();
+		if (year > 0)
+			metadata.putLong(MediaMetadata.METADATA_KEY_YEAR, year);
+		mediaSession.setMetadata(metadata.build());
+		mediaSession.setActive(true);
+
 		return true;
 	}
 
-	private synchronized boolean handleLoadAction()
+	private synchronized boolean handleLoadCommand()
 	{
-		switch (action) {
-		case ACTION_LOAD:
+		switch (command) {
+		case COMMAND_LOAD:
 			return load();
 
-		case ACTION_NEXT:
+		case COMMAND_NEXT:
 			if (info != null && song >= 0 && song + 1 < info.getSongs())
 				song++;
 			else {
@@ -255,7 +329,7 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 			}
 			return load();
 
-		case ACTION_PREV:
+		case COMMAND_PREV:
 			if (song > 0)
 				song--;
 			else {
@@ -274,23 +348,37 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 		}
 	}
 
-	private boolean handlePlayAction(AudioTrack audioTrack)
+	private final long COMMON_ACTIONS = PlaybackState.ACTION_PLAY_FROM_SEARCH | PlaybackState.ACTION_SEEK_TO | PlaybackState.ACTION_SKIP_TO_PREVIOUS | PlaybackState.ACTION_SKIP_TO_NEXT;
+
+	private boolean handlePlayCommand(AudioTrack audioTrack)
 	{
 		int pos;
 		synchronized (this) {
-			if (action == ACTION_PAUSE) {
+			if (command == COMMAND_PAUSE) {
+				setPlaybackState(PlaybackState.STATE_PAUSED, 0, PlaybackState.ACTION_PLAY | COMMON_ACTIONS);
+				showNotification(false);
 				audioTrack.pause();
-				while (action == ACTION_PAUSE) {
+				releaseFocus();
+				for (;;) {
+					if (command == COMMAND_PLAY) {
+						if (gainFocus()) {
+							setPlaybackState(PlaybackState.STATE_PLAYING, 1, PlaybackState.ACTION_PAUSE | COMMON_ACTIONS);
+							showNotification(false);
+							audioTrack.play();
+							break;
+						}
+						command = COMMAND_PAUSE;
+					}
+					else if (command != COMMAND_PAUSE)
+						break;
 					try {
 						wait();
 					}
 					catch (InterruptedException ex) {
 					}
 				}
-				if (action == ACTION_PLAY)
-					audioTrack.play();
 			}
-			if (action != ACTION_PLAY) {
+			if (command != COMMAND_PLAY) {
 				audioTrack.stop();
 				return false;
 			}
@@ -299,36 +387,51 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 			seekPosition = -1;
 		}
 		if (pos >= 0) {
+			if (pos < asap.getPosition())
+				setPlaybackState(PlaybackState.STATE_REWINDING, -10, 0);
+			else
+				setPlaybackState(PlaybackState.STATE_FAST_FORWARDING, 10, 0);
 			try {
 				asap.seek(pos);
 			}
 			catch (Exception ex) {
 			}
+			setPlaybackState(PlaybackState.STATE_PLAYING, 1, PlaybackState.ACTION_PAUSE | COMMON_ACTIONS);
 		}
 		return true;
 	}
 
 	private void playLoop()
 	{
-		action = ACTION_PLAY;
+		command = COMMAND_PLAY;
 		seekPosition = -1;
+		setPlaybackState(PlaybackState.STATE_PLAYING, 1, PlaybackState.ACTION_PAUSE | COMMON_ACTIONS);
 
-		int channelConfig = info.getChannels() == 1 ? AudioFormat.CHANNEL_CONFIGURATION_MONO : AudioFormat.CHANNEL_CONFIGURATION_STEREO;
+		int channelConfig = info.getChannels() == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO;
 		int bufferLen = AudioTrack.getMinBufferSize(ASAP.SAMPLE_RATE, channelConfig, AudioFormat.ENCODING_PCM_16BIT) >> 1;
 		if (bufferLen < 16384)
 			bufferLen = 16384;
 		byte[] byteBuffer = new byte[bufferLen << 1];
 		short[] shortBuffer = new short[bufferLen];
-		AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, ASAP.SAMPLE_RATE, channelConfig, AudioFormat.ENCODING_PCM_16BIT, bufferLen << 1, AudioTrack.MODE_STREAM);
+		AudioAttributes attributes = new AudioAttributes.Builder()
+			.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+			.setUsage(AudioAttributes.USAGE_MEDIA)
+			.build();
+		AudioFormat format = new AudioFormat.Builder()
+			.setChannelMask(channelConfig)
+			.setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+			.setSampleRate(ASAP.SAMPLE_RATE)
+			.build();
+		AudioTrack audioTrack = new AudioTrack(attributes, format, bufferLen << 1, AudioTrack.MODE_STREAM, AudioManager.AUDIO_SESSION_ID_GENERATE);
 		audioTrack.play();
 
-		while (handlePlayAction(audioTrack)) {
+		while (handlePlayCommand(audioTrack)) {
 			bufferLen = asap.generate(byteBuffer, byteBuffer.length, ASAPSampleFormat.S16_L_E) >> 1;
 			for (int i = 0; i < bufferLen; i++)
 				shortBuffer[i] = (short) ((byteBuffer[i << 1] & 0xff) | byteBuffer[i << 1 | 1] << 8);
 			audioTrack.write(shortBuffer, 0, bufferLen);
 			if (bufferLen < shortBuffer.length)
-				action = ACTION_NEXT;
+				command = COMMAND_NEXT;
 		}
 		audioTrack.release();
 	}
@@ -337,9 +440,9 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 	{
 		if (!gainFocus())
 			return;
-		while (handleLoadAction()) {
+		while (handleLoadCommand()) {
 			showInfo();
-			showNotification();
+			showNotification(true);
 			playLoop();
 		}
 		stopForeground(true);
@@ -348,12 +451,12 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 
 	private boolean isPaused()
 	{
-		return action == ACTION_PAUSE;
+		return command == COMMAND_PAUSE;
 	}
 
 	public boolean isPlaying()
 	{
-		return action != ACTION_PAUSE;
+		return command != COMMAND_PAUSE;
 	}
 
 	public boolean canPause()
@@ -378,30 +481,22 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 
 	public void pause()
 	{
-		setAction(ACTION_PAUSE);
+		setCommand(COMMAND_PAUSE);
 	}
 
 	public void start()
 	{
-		setAction(ACTION_PLAY);
-	}
-
-	synchronized void togglePause()
-	{
-		if (isPaused())
-			start();
-		else
-			pause();
+		setCommand(COMMAND_PLAY);
 	}
 
 	void playNextSong()
 	{
-		setAction(ACTION_NEXT);
+		setCommand(COMMAND_NEXT);
 	}
 
 	void playPreviousSong()
 	{
-		setAction(ACTION_PREV);
+		setCommand(COMMAND_PREV);
 	}
 
 	public int getDuration()
@@ -459,52 +554,112 @@ public class PlayerService extends Service implements Runnable, AudioManager.OnA
 		getAudioManager().abandonAudioFocus(this);
 	}
 
-	private final BroadcastReceiver headsetReceiver = new BroadcastReceiver() {
+	private final MediaSession.Callback callback = new MediaSession.Callback() {
 		@Override
-		public void onReceive(Context context, Intent intent)
+		public void onPause()
 		{
-			if (!isInitialStickyBroadcast() && intent.getIntExtra("state", -1) == 0) {
-				pause();
-				showInfo(); // just to update the MediaController
+			pause();
+		}
+
+		@Override
+		public void onPlay()
+		{
+			start();
+		}
+
+		@Override
+		public void onSeekTo(long pos)
+		{
+			seekTo((int) pos);
+		}
+
+		@Override
+		public void onSkipToNext()
+		{
+			playNextSong();
+		}
+
+		@Override
+		public void onSkipToPrevious()
+		{
+			playPreviousSong();
+		}
+
+		@Override
+		public void onPlayFromSearch(String query, Bundle extras)
+		{
+			if (setSearchPlaylist(query)) {
+				uri = playlist.get(0);
+				setCommand(COMMAND_LOAD);
 			}
 		}
 	};
 
-	@Override
-	public void onStart(Intent intent, int startId)
-	{
-		super.onStart(intent, startId);
-
-		registerReceiver(headsetReceiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
-
-		ComponentName eventReceiver = new ComponentName(getPackageName(), MediaButtonEventReceiver.class.getName());
-		getAudioManager().registerMediaButtonEventReceiver(eventReceiver);
-
-		song = SONG_DEFAULT;
-		uri = intent.getData();
-		String playlistUri = intent.getStringExtra(EXTRA_PLAYLIST);
-		if (playlistUri != null)
-			setPlaylist(Uri.parse(playlistUri), false);
-		else if (ASAPInfo.isOurFile(uri.toString()))
-			setPlaylist(Util.getParent(uri), false);
-		else {
-			// shuffle
-			setPlaylist(uri, true);
-			uri = playlist.get(0);
+	private final BroadcastReceiver becomingNoisyReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent)
+		{
+			pause();
+			showInfo(); // just to update the MediaController
 		}
-		setAction(ACTION_LOAD);
+	};
+
+	@Override
+	public void onCreate()
+	{
+		activityIntent = PendingIntent.getActivity(this, 0, new Intent(this, Player.class), 0);
+		mediaSession = new MediaSession(this, "ASAP");
+		mediaSession.setCallback(callback);
+		mediaSession.setSessionActivity(activityIntent);
+		mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
+	}
+
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId)
+	{
+		switch (intent.getAction()) {
+		case Intent.ACTION_VIEW:
+			registerReceiver(becomingNoisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+			song = SONG_DEFAULT;
+			uri = intent.getData();
+			String playlistUri = intent.getStringExtra(EXTRA_PLAYLIST);
+			if (playlistUri != null)
+				setPlaylist(Uri.parse(playlistUri), false);
+			else if (ASAPInfo.isOurFile(uri.toString()))
+				setPlaylist(Util.getParent(uri), false);
+			else {
+				// shuffle
+				setPlaylist(uri, true);
+				uri = playlist.get(0);
+			}
+			setCommand(COMMAND_LOAD);
+			break;
+		case ACTION_PLAY:
+			start();
+			break;
+		case ACTION_PAUSE:
+			pause();
+			break;
+		case ACTION_NEXT:
+			playNextSong();
+			break;
+		case ACTION_PREVIOUS:
+			playPreviousSong();
+			break;
+		default:
+			break;
+		}
+		return START_NOT_STICKY;
 	}
 
 	@Override
 	public void onDestroy()
 	{
-		super.onDestroy();
 		stop();
 
-		ComponentName eventReceiver = new ComponentName(getPackageName(), MediaButtonEventReceiver.class.getName());
-		getAudioManager().unregisterMediaButtonEventReceiver(eventReceiver);
+		unregisterReceiver(becomingNoisyReceiver);
 
-		unregisterReceiver(headsetReceiver);
+		mediaSession.release();
 	}
 
 

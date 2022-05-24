@@ -1,6 +1,6 @@
 // asapinfo.ci - module parser
 //
-// Copyright (C) 2010-2020  Piotr Fusik
+// Copyright (C) 2010-2021  Piotr Fusik
 //
 // This file is part of ASAP (Another Slight Atari Player),
 // see http://asap.sourceforge.net
@@ -105,18 +105,18 @@ public class ASAPInfo
 	/// ASAP version - major part.
 	public const int VersionMajor = 5;
 	/// ASAP version - minor part.
-	public const int VersionMinor = 0;
+	public const int VersionMinor = 2;
 	/// ASAP version - micro part.
-	public const int VersionMicro = 1;
+	public const int VersionMicro = 0;
 	/// ASAP version as a string.
-	public const string Version = VersionMajor + "." + VersionMinor + "." + VersionMicro;
+	public const string Version = $"{VersionMajor}.{VersionMinor}.{VersionMicro}";
 
 	/// Years ASAP was created in.
-	public const string Years = "2005-2020";
+	public const string Years = "2005-2021";
 
 	/// Short credits for ASAP.
 	public const string Credits =
-		"Another Slight Atari Player (C) " + Years + " Piotr Fusik\n" +
+		$"Another Slight Atari Player (C) {Years} Piotr Fusik\n" +
 		"CMC, MPT, TMC, TM2 players (C) 1994-2005 Marcin Lewandowski\n" +
 		"RMT player (C) 2002-2005 Radek Sterba\n" +
 		"DLT player (C) 2009 Marek Konopka\n" +
@@ -141,10 +141,12 @@ public class ASAPInfo
 	/// Maximum number of songs in a file.
 	public const int MaxSongs = 32;
 
+#if !OPENCL
 	string() Filename;
 	string() Author;
 	string() Title;
 	string() Date;
+#endif
 	int Channels;
 	int Songs;
 	int DefaultSong;
@@ -171,281 +173,6 @@ public class ASAPInfo
 	{
 		if (!IsValidChar(c))
 			throw "Invalid character";
-	}
-
-	static void CheckValidText(string s)
-		throws
-	{
-		int n = s.Length;
-		if (n > MaxTextLength)
-			throw "Text too long";
-		for (int i = 0; i < n; i++)
-			CheckValidChar(s[i]);
-	}
-
-	/// Returns author's name.
-	/// A nickname may be included in parentheses after the real name.
-	/// Multiple authors are separated with `" & "`.
-	/// An empty string means the author is unknown.
-	public string GetAuthor() => Author;
-
-	/// Sets author's name.
-	/// A nickname may be included in parentheses after the real name.
-	/// Multiple authors are separated with `" & "`.
-	/// An empty string means the author is unknown.
-	public void SetAuthor!(
-		/// New author's name for the current music.
-		string value)
-		throws
-	{
-		CheckValidText(value);
-		Author = value;
-	}
-
-	/// Returns music title.
-	/// An empty string means the title is unknown.
-	public string GetTitle() => Title;
-
-	/// Sets music title.
-	/// An empty string means the title is unknown.
-	public void SetTitle!(
-		/// New title for the current music.
-		string value)
-		throws
-	{
-		CheckValidText(value);
-		Title = value;
-	}
-
-	/// Returns music title or filename.
-	/// If title is unknown returns filename without the path or extension.
-	public string GetTitleOrFilename() => Title.Length > 0 ? Title : Filename;
-
-	/// Returns music creation date.
-	/// Some of the possible formats are:
-	/// * YYYY
-	/// * MM/YYYY
-	/// * DD/MM/YYYY
-	/// * YYYY-YYYY
-	///
-	/// An empty string means the date is unknown.
-	public string GetDate() => Date;
-
-	/// Sets music creation date.
-	/// Some of the possible formats are:
-	/// * YYYY
-	/// * MM/YYYY
-	/// * DD/MM/YYYY
-	/// * YYYY-YYYY
-	///
-	/// An empty string means the date is unknown.
-	public void SetDate!(
-		/// New music creation date.
-		string value)
-		throws
-	{
-		CheckValidText(value);
-		Date = value;
-	}
-
-	bool CheckTwoDateDigits(int i)
-	{
-		int d1 = Date[i];
-		int d2 = Date[i + 1];
-		return d1 >= '0' && d1 <= '9' && d2 >= '0' && d2 <= '9';
-	}
-
-	int CheckDate()
-	{
-		int n = Date.Length;
-		switch (n) {
-		case 10:
-			if (!CheckTwoDateDigits(0) || Date[2] != '/')
-				return -1;
-			goto case 7;
-		case 7:
-			if (!CheckTwoDateDigits(n - 7) || Date[n - 5] != '/')
-				return -1;
-			goto case 4;
-		case 4:
-			if (!CheckTwoDateDigits(n - 4) || !CheckTwoDateDigits(n - 2))
-				return -1;
-			return n;
-		default:
-			return -1;
-		}
-	}
-
-	int GetTwoDateDigits(int i) => (Date[i] - '0') * 10 + Date[i + 1] - '0';
-
-	/// Returns music creation year.
-	/// -1 means the year is unknown.
-	public int GetYear()
-	{
-		int n = CheckDate();
-		if (n < 0)
-			return -1;
-		return GetTwoDateDigits(n - 4) * 100 + GetTwoDateDigits(n - 2);
-	}
-
-	/// Returns music creation month (1-12).
-	/// -1 means the month is unknown.
-	public int GetMonth()
-	{
-		int n = CheckDate();
-		if (n < 7)
-			return -1;
-		return GetTwoDateDigits(n - 7);
-	}
-
-	/// Returns day of month of the music creation date.
-	/// -1 means the day is unknown.
-	public int GetDayOfMonth()
-	{
-		int n = CheckDate();
-		if (n != 10)
-			return -1;
-		return GetTwoDateDigits(0);
-	}
-
-	/// Returns 1 for mono or 2 for stereo.
-	public int GetChannels() => Channels;
-
-	/// Returns number of songs in the file.
-	public int GetSongs() => Songs;
-
-	/// Returns 0-based index of the "main" song.
-	/// The specified song should be played by default.
-	public int GetDefaultSong() => DefaultSong;
-
-	/// Sets the 0-based index of the "main" song.
-	public void SetDefaultSong!(
-		/// New default song.
-		int song)
-		throws
-	{
-		if (song < 0 || song >= Songs)
-			throw "Song out of range";
-		DefaultSong = song;
-	}
-
-	/// Returns length of the specified song.
-	/// The length is specified in milliseconds. -1 means the length is indeterminate.
-	public int GetDuration(
-		/// Song to get length of, 0-based.
-		int song)
-		=> Durations[song];
-
-	/// Sets length of the specified song.
-	/// The length is specified in milliseconds. -1 means the length is indeterminate.
-	public void SetDuration!(
-		/// Song to set length of, 0-based.
-		int song,
-		/// New length in milliseconds.
-		int duration)
-		throws
-	{
-		if (song < 0 || song >= Songs)
-			throw "Song out of range";
-		Durations[song] = duration;
-	}
-
-	/// Returns information whether the specified song loops.
-	/// Returns:
-	/// * `true` if the song loops
-	/// * `false` if the song stops
-	public bool GetLoop(
-		/// Song to check for looping, 0-based.
-		int song)
-		=> Loops[song];
-
-	/// Sets information whether the specified song loops.
-	/// Use:
-	/// * `true` if the song loops
-	/// * `false` if the song stops
-	public void SetLoop!(
-		/// Song to set as looping, 0-based.
-		int song,
-		/// `true` if the song loops.
-		bool loop)
-		throws
-	{
-		if (song < 0 || song >= Songs)
-			throw "Song out of range";
-		Loops[song] = loop;
-	}
-
-	/// Returns `true` for NTSC song and `false` for PAL song.
-	public bool IsNtsc() => Ntsc;
-
-	/// Returns the letter argument for the TYPE SAP tag.
-	/// Returns zero for non-SAP files.
-	public int GetTypeLetter()
-	{
-		switch (Type) {
-		case ASAPModuleType.SapB: return 'B';
-		case ASAPModuleType.SapC: return 'C';
-		case ASAPModuleType.SapD: return 'D';
-		case ASAPModuleType.SapS: return 'S';
-		default: return 0;
-		}
-	}
-
-	/// Returns player routine rate in Atari scanlines.
-	public int GetPlayerRateScanlines() => Fastplay;
-
-	/// Returns approximate player routine rate in Hz.
-	public int GetPlayerRateHz()
-	{
-		int scanlineClock = Ntsc ? 1789772 / 114 : 1773447 / 114;
-		return (scanlineClock + (Fastplay >> 1)) / Fastplay;
-	}
-
-	/// Returns the address of the module.
-	/// Returns -1 if unknown.
-	public int GetMusicAddress() => Music;
-
-	/// Causes music to be relocated.
-	/// Use only with `ASAPWriter.Write`.
-	public void SetMusicAddress!(
-		/// New music address.
-		int address)
-		throws
-	{
-		if (address < 0 || address >= 0xffff)
-			throw "Invalid music address";
-		Music = address;
-	}
-
-	/// Returns the address of the player initialization routine.
-	/// Returns -1 if no initialization routine.
-	public int GetInitAddress() => Init;
-
-	/// Returns the address of the player routine.
-	public int GetPlayerAddress() => Player;
-
-	/// Returns the address of the COVOX chip.
-	/// Returns -1 if no COVOX enabled.
-	public int GetCovoxAddress() => CovoxAddr;
-
-	/// Retturns the length of the SAP header in bytes.
-	public int GetSapHeaderLength() => HeaderLen;
-
-	/// Returns the offset of instrument names for RMT module.
-	/// Returns -1 if not an RMT module or RMT module without instrument names.
-	public int GetInstrumentNamesOffset(
-		/// Content of the RMT file.
-		byte[] module,
-		/// Length of the RMT file.
-		int moduleLen)
-	{
-		if (Type != ASAPModuleType.Rmt)
-			return -1;
-		for (int offset = GetWord(module, 4) - GetWord(module, 2) + 12; offset < moduleLen; offset++) {
-			if (module[offset - 1] == 0)
-				return offset;
-		}
-		return -1;
 	}
 
 	internal static int GetWord(byte[] array, int i) => array[i] + (array[i + 1] << 8);
@@ -713,7 +440,9 @@ public class ASAPInfo
 					seen[i] = SeenBefore;
 			for (int patternRows = module[0x1ce]; --patternRows >= 0; ) {
 				for (ch = 3; ch >= 0; ch--) {
-					if (patternOffset[ch] == 0 || --blankRowsCounter[ch] >= 0)
+					if (patternOffset[ch] == 0)
+						continue;
+					if (--blankRowsCounter[ch] >= 0)
 						continue;
 					for (;;) {
 						i = module[patternOffset[ch]++];
@@ -987,6 +716,7 @@ public class ASAPInfo
 		Player = 0x600;
 		if (Songs == 0)
 			throw "No songs found";
+#if !OPENCL
 		byte[MaxTextLength] title;
 		int titleLen;
 		for (titleLen = 0; titleLen < MaxTextLength && 10 + blockLen + titleLen < moduleLen; titleLen++) {
@@ -997,6 +727,7 @@ public class ASAPInfo
 			title[titleLen] = IsValidChar(c) ? c : ' ';
 		}
 		Title = Encoding.UTF8.GetString(title, 0, titleLen);
+#endif
 	}
 
 	void ParseTmcSong!(byte[] module, int pos)
@@ -1056,6 +787,7 @@ public class ASAPInfo
 		AddSong(frames);
 	}
 
+#if !OPENCL
 	static int ParseTmcTitle(byte[]! title, int titleLen, byte[] module, int moduleOffset)
 	{
 		int lastOffset = moduleOffset + 29;
@@ -1098,6 +830,7 @@ public class ASAPInfo
 		}
 		return titleLen;
 	}
+#endif
 
 	void ParseTmc!(byte[] module, int moduleLen)
 		throws
@@ -1132,9 +865,11 @@ public class ASAPInfo
 		if (i < 1 || i > 4)
 			throw "Unsupported player call rate";
 		Fastplay = 312 / i;
+#if !OPENCL
 		byte[MaxTextLength] title;
 		int titleLen = ParseTmcTitle(title, 0, module, 6);
 		Title = Encoding.UTF8.GetString(title, 0, titleLen);
+#endif
 	}
 
 	void ParseTm2Song!(byte[] module, int pos)
@@ -1252,11 +987,13 @@ public class ASAPInfo
 			if (c == 0 || c >= 0x80)
 				ParseTm2Song(module, i + 17);
 		}
+#if !OPENCL
 		byte[MaxTextLength] title;
 		int titleLen = ParseTmcTitle(title, 0, module, 0x27);
 		titleLen = ParseTmcTitle(title, titleLen, module, 0x47);
 		titleLen = ParseTmcTitle(title, titleLen, module, 0x67);
 		Title = Encoding.UTF8.GetString(title, 0, titleLen);
+#endif
 	}
 
 	static int AfterFF(byte[] module, int moduleLen, int currentOffset)
@@ -1333,39 +1070,40 @@ public class ASAPInfo
 			int[3] patternPos = 0;
 			int playerCalls = 0;
 			Loops[Songs] = true;
-			
+
 			while (!IsFcSongEnd(module, trackPos)) {
 				for (int n = 0; n < 3; n++) {
-					int trackCmd = GetFcTrackCommand(module, trackPos, n);
-					if (trackCmd != 0xff && patternDelay[n]-- <= 0) { //"<" for junks in track
-						while (trackPos[n] < 0x100) {
-							trackCmd = GetFcTrackCommand(module, trackPos, n);
-							if (trackCmd < 0x40) {
-								int patternCmd = module[patternOffsets[trackCmd] + patternPos[n]++];
-								if (patternCmd < 0x40) {
-									patternDelay[n] = noteDuration[n];
-									break;
-								}
-								else if (patternCmd < 0x60)
-									noteDuration[n] = patternCmd - 0x40;
-								else if (patternCmd == 0xff) {
-									patternDelay[n] = 0;
-									noteDuration[n] = 0;
-									patternPos[n] = 0;
-									trackPos[n]++;
-								}
-							}
-							else if (trackCmd == 0x40)
-								trackPos[n] += 2;
-							else if (trackCmd == 0xfe) {
-								Loops[Songs] = false;
+					if (GetFcTrackCommand(module, trackPos, n) == 0xff)
+						continue;
+					if (patternDelay[n]-- > 0)
+						continue;
+					while (trackPos[n] < 0x100) {
+						int trackCmd = GetFcTrackCommand(module, trackPos, n);
+						if (trackCmd < 0x40) {
+							int patternCmd = module[patternOffsets[trackCmd] + patternPos[n]++];
+							if (patternCmd < 0x40) {
+								patternDelay[n] = noteDuration[n];
 								break;
 							}
-							else if (trackCmd == 0xff)
-								break;
-							else
+							else if (patternCmd < 0x60)
+								noteDuration[n] = patternCmd - 0x40;
+							else if (patternCmd == 0xff) {
+								patternDelay[n] = 0;
+								noteDuration[n] = 0;
+								patternPos[n] = 0;
 								trackPos[n]++;
+							}
 						}
+						else if (trackCmd == 0x40)
+							trackPos[n] += 2;
+						else if (trackCmd == 0xfe) {
+							Loops[Songs] = false;
+							break;
+						}
+						else if (trackCmd == 0xff)
+							break;
+						else
+							trackPos[n]++;
 					}
 				}
 				if (IsFcSongEnd(module, trackPos))
@@ -1387,6 +1125,17 @@ public class ASAPInfo
 		}
 	}
 
+#if !OPENCL
+	static string() ParseText(byte[] module, int i, int argEnd)
+	{
+		if (i < 0 || argEnd - i < 2 || module[i] != '"' || module[argEnd - 1] != '"')
+			return ""; // silently ignore malformed AUTHOR/NAME/DATE
+		if (module[i + 1] == '<' && module[i + 2] == '?' && module[i + 3] == '>')
+			return "";
+		return Encoding.UTF8.GetString(module, i + 1, argEnd - i - 2);
+	}
+#endif
+
 	static bool HasStringAt(byte[] module, int moduleIndex, string s)
 	{
 		int n = s.Length;
@@ -1396,13 +1145,14 @@ public class ASAPInfo
 		return true;
 	}
 
-	static int ParseDec(string s, int minVal, int maxVal)
+	static int ParseDec(byte[] module, int i, int argEnd, int minVal, int maxVal)
 		throws
 	{
+		if (i < 0)
+			throw "Missing number";
 		int r = 0;
-		int len = s.Length;
-		for (int i = 0; i < len; i++) {
-			int c = s[i];
+		while (i < argEnd) {
+			int c = module[i++];
 			if (c < '0' || c > '9')
 				throw "Invalid number";
 			r = r * 10 + c - '0';
@@ -1414,15 +1164,16 @@ public class ASAPInfo
 		return r;
 	}
 
-	static int ParseHex(string s)
+	static int ParseHex(byte[] module, int i, int argEnd)
 		throws
 	{
+		if (i < 0)
+			throw "Missing number";
 		int r = 0;
-		int len = s.Length;
-		for (int i = 0; i < len; i++) {
+		while (i < argEnd) {
+			int c = module[i++];
 			if (r > 0xfff)
 				throw "Number too big";
-			int c = s[i];
 			r <<= 4;
 			if (c >= '0' && c <= '9')
 				r += c - '0';
@@ -1469,18 +1220,18 @@ public class ASAPInfo
 
 			// find where is the argument, if any
 			int argStart = -1;
-			int argLen = -1;
+			int argEnd = -1;
 			for (;;) {
 				int c = module[moduleIndex];
 				if (c > ' ') {
 					CheckValidChar(c);
 					if (argStart < 0)
 						argStart = moduleIndex;
-					argLen = -1;
+					argEnd = -1;
 				}
 				else {
-					if (argLen < 0)
-						argLen = moduleIndex - argStart;
+					if (argEnd < 0)
+						argEnd = moduleIndex;
 					if (c == '\n')
 						break;
 				}
@@ -1491,54 +1242,69 @@ public class ASAPInfo
 				throw "Invalid SAP file";
 
 			// handle tags, ignore unknown
-			const int maxTagLen = "FASTPLAY".Length;
-			if (tagLen <= maxTagLen) {
-				string() tag = Encoding.UTF8.GetString(module, lineStart, tagLen);
-				if (argStart >= 0 && argLen <= MaxTextLength + 2) {
-					string() arg = Encoding.UTF8.GetString(module, argStart, argLen);
-					if (argLen >= 3 && arg[0] == '"' && arg[argLen - 1] == '"'
-					 && arg != "\"<?>\"") {
-						if (tag == "AUTHOR")
-							Author = arg.Substring(1, argLen - 2);
-						else if (tag == "NAME")
-							Title = arg.Substring(1, argLen - 2);
-						else if (tag == "DATE")
-							Date = arg.Substring(1, argLen - 2);
-					}
-					else if (tag == "SONGS")
-						Songs = ParseDec(arg, 1, MaxSongs);
-					else if (tag == "DEFSONG")
-						DefaultSong = ParseDec(arg, 0, MaxSongs - 1);
-					else if (tag == "TIME") {
-						if (durationIndex >= MaxSongs)
-							throw "Too many TIME tags";
-						if (argLen > 5 && HasStringAt(module, argStart + argLen - 5, " LOOP")) {
-							Loops[durationIndex] = true;
-							arg = arg.Substring(0, argLen - 5);
-						}
-						Durations[durationIndex++] = ParseDuration(arg);
-					}
-					else if (tag == "TYPE")
-						type = arg[0];
-					else if (tag == "FASTPLAY")
-						Fastplay = ParseDec(arg, 1, 32767);
-					else if (tag == "MUSIC")
-						Music = ParseHex(arg);
-					else if (tag == "INIT")
-						Init = ParseHex(arg);
-					else if (tag == "PLAYER")
-						Player = ParseHex(arg);
-					else if (tag == "COVOX") {
-						CovoxAddr = ParseHex(arg);
-						if (CovoxAddr != 0xd600)
-							throw "COVOX should be D600";
-						Channels = 2;
-					}
+			switch (Encoding.UTF8.GetString(module, lineStart, tagLen)) {
+#if !OPENCL
+			case "AUTHOR":
+				Author = ParseText(module, argStart, argEnd);
+				break;
+			case "NAME":
+				Title = ParseText(module, argStart, argEnd);
+				break;
+			case "DATE":
+				Date = ParseText(module, argStart, argEnd);
+				break;
+			case "TIME":
+				if (durationIndex >= MaxSongs)
+					throw "Too many TIME tags";
+				if (argStart < 0)
+					throw "Missing TIME argument";
+				if (argEnd - argStart > 5 && HasStringAt(module, argEnd - 5, " LOOP")) {
+					Loops[durationIndex] = true;
+					argEnd -= 5;
 				}
-				else if (tag == "STEREO")
-					Channels = 2;
-				else if (tag == "NTSC")
-					Ntsc = true;
+				{
+					string() arg = Encoding.UTF8.GetString(module, argStart, argEnd - argStart);
+					Durations[durationIndex++] = ParseDuration(arg);
+				}
+				break;
+#endif
+			case "SONGS":
+				Songs = ParseDec(module, argStart, argEnd, 1, MaxSongs);
+				break;
+			case "DEFSONG":
+				DefaultSong = ParseDec(module, argStart, argEnd, 0, MaxSongs - 1);
+				break;
+			case "TYPE":
+				if (argStart < 0)
+					throw "Missing TYPE argument";
+				type = module[argStart];
+				break;
+			case "FASTPLAY":
+				Fastplay = ParseDec(module, argStart, argEnd, 1, 32767);
+				break;
+			case "MUSIC":
+				Music = ParseHex(module, argStart, argEnd);
+				break;
+			case "INIT":
+				Init = ParseHex(module, argStart, argEnd);
+				break;
+			case "PLAYER":
+				Player = ParseHex(module, argStart, argEnd);
+				break;
+			case "COVOX":
+				CovoxAddr = ParseHex(module, argStart, argEnd);
+				if (CovoxAddr != 0xd600)
+					throw "COVOX should be D600";
+				Channels = 2;
+				break;
+			case "STEREO":
+				Channels = 2;
+				break;
+			case "NTSC":
+				Ntsc = true;
+				break;
+			default:
+				break;
 			}
 		}
 
@@ -1683,17 +1449,23 @@ public class ASAPInfo
 			ext -= basename;
 			if (ext > MaxTextLength)
 				ext = MaxTextLength;
+#if !OPENCL
 			Filename = filename.Substring(basename, ext);
+#endif
 			ext = GetPackedExt(filename);
 		}
 		else {
+#if !OPENCL
 			Filename = "";
+#endif
 			ext = GuessPackedExt(module, moduleLen);
 		}
 
+#if !OPENCL
 		Author = "";
 		Title = "";
 		Date = "";
+#endif
 		Channels = 1;
 		Songs = 1;
 		DefaultSong = 0;
@@ -1766,6 +1538,280 @@ public class ASAPInfo
 		}
 	}
 
+#if !OPENCL
+
+	static void CheckValidText(string s)
+		throws
+	{
+		int n = s.Length;
+		if (n > MaxTextLength)
+			throw "Text too long";
+		for (int i = 0; i < n; i++)
+			CheckValidChar(s[i]);
+	}
+
+	/// Returns author's name.
+	/// A nickname may be included in parentheses after the real name.
+	/// Multiple authors are separated with `" & "`.
+	/// An empty string means the author is unknown.
+	public string GetAuthor() => Author;
+
+	/// Sets author's name.
+	/// A nickname may be included in parentheses after the real name.
+	/// Multiple authors are separated with `" & "`.
+	/// An empty string means the author is unknown.
+	public void SetAuthor!(
+		/// New author's name for the current music.
+		string value)
+		throws
+	{
+		CheckValidText(value);
+		Author = value;
+	}
+
+	/// Returns music title.
+	/// An empty string means the title is unknown.
+	public string GetTitle() => Title;
+
+	/// Sets music title.
+	/// An empty string means the title is unknown.
+	public void SetTitle!(
+		/// New title for the current music.
+		string value)
+		throws
+	{
+		CheckValidText(value);
+		Title = value;
+	}
+
+	/// Returns music title or filename.
+	/// If title is unknown returns filename without the path or extension.
+	public string GetTitleOrFilename() => Title.Length > 0 ? Title : Filename;
+
+	/// Returns music creation date.
+	/// Some of the possible formats are:
+	/// * YYYY
+	/// * MM/YYYY
+	/// * DD/MM/YYYY
+	/// * YYYY-YYYY
+	///
+	/// An empty string means the date is unknown.
+	public string GetDate() => Date;
+
+	/// Sets music creation date.
+	/// Some of the possible formats are:
+	/// * YYYY
+	/// * MM/YYYY
+	/// * DD/MM/YYYY
+	/// * YYYY-YYYY
+	///
+	/// An empty string means the date is unknown.
+	public void SetDate!(
+		/// New music creation date.
+		string value)
+		throws
+	{
+		CheckValidText(value);
+		Date = value;
+	}
+
+	int CheckDate()
+	{
+		int n = Date.Length;
+		switch (n) {
+		case 4: // YYYY
+		case 7: // MM/YYYY
+		case 10: // DD/MM/YYYY
+			break;
+		default:
+			return -1;
+		}
+		for (int i = 0; i < n; i++) {
+			int c = Date[i];
+			if (i == n - 5 || i == n - 8) {
+				if (c != '/')
+					return -1;
+			}
+			else if (c < '0' || c > '9')
+				return -1;
+		}
+		return n;
+	}
+
+	int GetTwoDateDigits(int i) => (Date[i] - '0') * 10 + Date[i + 1] - '0';
+
+	/// Returns music creation year.
+	/// -1 means the year is unknown.
+	public int GetYear()
+	{
+		int n = CheckDate();
+		if (n < 0)
+			return -1;
+		return GetTwoDateDigits(n - 4) * 100 + GetTwoDateDigits(n - 2);
+	}
+
+	/// Returns music creation month (1-12).
+	/// -1 means the month is unknown.
+	public int GetMonth()
+	{
+		int n = CheckDate();
+		if (n < 7)
+			return -1;
+		return GetTwoDateDigits(n - 7);
+	}
+
+	/// Returns day of month of the music creation date.
+	/// -1 means the day is unknown.
+	public int GetDayOfMonth()
+	{
+		int n = CheckDate();
+		if (n != 10)
+			return -1;
+		return GetTwoDateDigits(0);
+	}
+
+#endif
+
+	/// Returns 1 for mono or 2 for stereo.
+	public int GetChannels() => Channels;
+
+	/// Returns number of songs in the file.
+	public int GetSongs() => Songs;
+
+	/// Returns 0-based index of the "main" song.
+	/// The specified song should be played by default.
+	public int GetDefaultSong() => DefaultSong;
+
+	/// Sets the 0-based index of the "main" song.
+	public void SetDefaultSong!(
+		/// New default song.
+		int song)
+		throws
+	{
+		if (song < 0 || song >= Songs)
+			throw "Song out of range";
+		DefaultSong = song;
+	}
+
+	/// Returns length of the specified song.
+	/// The length is specified in milliseconds. -1 means the length is indeterminate.
+	public int GetDuration(
+		/// Song to get length of, 0-based.
+		int song)
+		=> Durations[song];
+
+	/// Sets length of the specified song.
+	/// The length is specified in milliseconds. -1 means the length is indeterminate.
+	public void SetDuration!(
+		/// Song to set length of, 0-based.
+		int song,
+		/// New length in milliseconds.
+		int duration)
+		throws
+	{
+		if (song < 0 || song >= Songs)
+			throw "Song out of range";
+		Durations[song] = duration;
+	}
+
+	/// Returns information whether the specified song loops.
+	/// Returns:
+	/// * `true` if the song loops
+	/// * `false` if the song stops
+	public bool GetLoop(
+		/// Song to check for looping, 0-based.
+		int song)
+		=> Loops[song];
+
+	/// Sets information whether the specified song loops.
+	/// Use:
+	/// * `true` if the song loops
+	/// * `false` if the song stops
+	public void SetLoop!(
+		/// Song to set as looping, 0-based.
+		int song,
+		/// `true` if the song loops.
+		bool loop)
+		throws
+	{
+		if (song < 0 || song >= Songs)
+			throw "Song out of range";
+		Loops[song] = loop;
+	}
+
+	/// Returns `true` for NTSC song and `false` for PAL song.
+	public bool IsNtsc() => Ntsc;
+
+	/// Returns the letter argument for the TYPE SAP tag.
+	/// Returns zero for non-SAP files.
+	public int GetTypeLetter()
+	{
+		switch (Type) {
+		case ASAPModuleType.SapB: return 'B';
+		case ASAPModuleType.SapC: return 'C';
+		case ASAPModuleType.SapD: return 'D';
+		case ASAPModuleType.SapS: return 'S';
+		default: return 0;
+		}
+	}
+
+	/// Returns player routine rate in Atari scanlines.
+	public int GetPlayerRateScanlines() => Fastplay;
+
+	/// Returns approximate player routine rate in Hz.
+	public int GetPlayerRateHz()
+	{
+		int scanlineClock = Ntsc ? 1789772 / 114 : 1773447 / 114;
+		return (scanlineClock + (Fastplay >> 1)) / Fastplay;
+	}
+
+	/// Returns the address of the module.
+	/// Returns -1 if unknown.
+	public int GetMusicAddress() => Music;
+
+	/// Causes music to be relocated.
+	/// Use only with `ASAPWriter.Write`.
+	public void SetMusicAddress!(
+		/// New music address.
+		int address)
+		throws
+	{
+		if (address < 0 || address >= 0xffff)
+			throw "Invalid music address";
+		Music = address;
+	}
+
+	/// Returns the address of the player initialization routine.
+	/// Returns -1 if no initialization routine.
+	public int GetInitAddress() => Init;
+
+	/// Returns the address of the player routine.
+	public int GetPlayerAddress() => Player;
+
+	/// Returns the address of the COVOX chip.
+	/// Returns -1 if no COVOX enabled.
+	public int GetCovoxAddress() => CovoxAddr;
+
+	/// Returns the length of the SAP header in bytes.
+	public int GetSapHeaderLength() => HeaderLen;
+
+	/// Returns the offset of instrument names for RMT module.
+	/// Returns -1 if not an RMT module or RMT module without instrument names.
+	public int GetInstrumentNamesOffset(
+		/// Content of the RMT file.
+		byte[] module,
+		/// Length of the RMT file.
+		int moduleLen)
+	{
+		if (Type != ASAPModuleType.Rmt)
+			return -1;
+		for (int offset = GetWord(module, 4) - GetWord(module, 2) + 12; offset < moduleLen; offset++) {
+			if (module[offset - 1] == 0)
+				return offset;
+		}
+		return -1;
+	}
+
 #if !ASAP_ONLY_SAP
 
 	/// Returns human-readable description of the filename extension.
@@ -1780,7 +1826,7 @@ public class ASAPInfo
 		case PackExt("CM3"): return "CMC \"3/4\"";
 		case PackExt("CMR"): return "CMC \"Rzog\"";
 		case PackExt("CMS"): return "Stereo Double CMC";
-		case PackExt("DMC"): return "DoublePlay CMC";
+		case PackExt("DMC"): return "CMC DoublePlay";
 		case PackExt("DLT"): return "Delta Music Composer";
 		case PackExt("MPT"): return "Music ProTracker";
 		case PackExt("MPD"): return "MPT DoublePlay";

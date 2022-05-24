@@ -68,8 +68,8 @@
 				<xsl:attribute name="class">
 					<xsl:choose>
 						<xsl:when test="status = 'stable'">good</xsl:when>
-						<xsl:when test="status = 'discontinued' or status = 'sample'">bad</xsl:when>
-						<xsl:otherwise>partial</xsl:otherwise>
+						<xsl:when test="status = 'in develop&#173;ment'">partial</xsl:when>
+						<xsl:otherwise>bad</xsl:otherwise>
 					</xsl:choose>
 				</xsl:attribute>
 				<xsl:value-of select="status" />

@@ -1,7 +1,7 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 bindir = $(prefix)/bin
-libdir = $(prefix)/lib$(shell test -d $(prefix)/lib64 -a `uname -i` = x86_64 && echo 64)
+libdir = $(prefix)/lib
 CC = gcc
 CFLAGS = -O2 -Wall
 CPPFLAGS =
@@ -17,10 +17,10 @@ INSTALL_DATA = mkdir -p $(DESTDIR)$(2) && $(INSTALL) -m 644 $(1) $(DESTDIR)$(2)/
 SDL_CFLAGS = `sdl-config --cflags`
 SDL_LIBS = `sdl-config --libs`
 SEVENZIP = 7z a -mx=9 -bd -bso0
-MAKEZIP = $(DO)$(RM) $@ && $(SEVENZIP) -tzip $@ $(^:%=./%) # "./" makes 7z don't store paths in the archive
+MAKEZIP = $(DO)$(RM) $@ && $(SEVENZIP) -tzip $@ $(patsubst %,./%,$(filter-out win32/signed,$^)) # "./" makes 7z don't store paths in the archive
 COPY = $(DO)cp $< $@
 XASM = $(DO)xasm -q -o $@ $<
-OSX_CC = $(DO)gcc -O2 -Wall -o $@ -undefined dynamic_lookup -mmacosx-version-min=10.6 $(INCLUDEOPTS) $(filter %.c,$^)
+OSX_CC = $(DO)cc -O2 -Wall -o $@ -undefined dynamic_lookup -mmacosx-version-min=10.6 -arch x86_64 -arch arm64 $(INCLUDEOPTS) $(filter %.c,$^)
 
 # no user-configurable paths below this line
 
@@ -132,8 +132,12 @@ clean:
 include $(srcdir)moc/moc.mk
 include $(srcdir)vlc/vlc.mk
 include $(srcdir)xmms/xmms.mk
+include $(srcdir)xmms2/xmms2.mk
 
 include $(srcdir)csharp/csharp.mk
 include $(srcdir)java/java.mk
 include $(srcdir)javascript/javascript.mk
+include $(srcdir)opencl/opencl.mk
+include $(srcdir)python/python.mk
+include $(srcdir)swift/swift.mk
 include $(srcdir)win32/win32.mk

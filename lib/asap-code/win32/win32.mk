@@ -21,6 +21,9 @@ WIN64_WINDRES = $(DO)x86_64-w64-mingw32-windres -o $@ $<
 CANDLE = $(DO)candle -nologo -o $@
 LIGHT = $(DO)light -nologo -o $@ -spdb
 
+# Code signing
+DO_SIGN = $(DO)signtool sign -d "ASAP - Another Slight Atari Player $(VERSION)" -n "Open Source Developer, Piotr Fusik" -tr http://time.certum.pl -fd sha256 -td sha256 $^ && touch $@
+
 # no user-configurable paths below this line
 
 ifndef DO
@@ -150,7 +153,7 @@ CLEAN += win32/bass/bass_asap-res.o
 FOOBAR2000_RUNTIME = win32/foobar2000/foobar2000_SDK.lib win32/foobar2000/pfc.lib $(FOOBAR2000_SDK_DIR)/foobar2000/shared/shared.lib
 
 win32/foo_asap.dll: $(call src,win32/foobar2000/foo_asap.cpp asap.[ch] astil.[ch] aatr-stdio.[ch] aatr.h win32/info_dlg.[ch] win32/settings_dlg.[ch]) win32/foobar2000/foo_asap.res $(FOOBAR2000_RUNTIME)
-	$(WIN32_CL) -DFOOBAR2000 -DWIN32 -EHsc -I$(FOOBAR2000_SDK_DIR) comctl32.lib comdlg32.lib ole32.lib shlwapi.lib user32.lib $(WIN32_LINKOPT)
+	$(WIN32_CL) -DFOOBAR2000 -DWIN32 -EHsc -I$(FOOBAR2000_SDK_DIR) comctl32.lib comdlg32.lib ole32.lib shell32.lib shlwapi.lib user32.lib $(WIN32_LINKOPT)
 CLEAN += win32/foo_asap.dll win32/foo_asap.exp win32/foo_asap.lib
 
 win32/foobar2000/foobar2000_SDK.lib: $(patsubst %,win32/foobar2000/%.obj,component_client abort_callback audio_chunk audio_chunk_channel_config \
@@ -245,7 +248,7 @@ win32/setup: release/asap-$(VERSION)-win32.msi
 
 release/asap-$(VERSION)-win32.msi: win32/setup/asap.wixobj \
 	$(call src,win32/wasap/wasap.ico win32/setup/license.rtf win32/setup/asap-banner.jpg win32/setup/asap-dialog.jpg win32/diff-sap.js win32/shellex/ASAPShellEx.propdesc) \
-	$(addprefix win32/,asapconv.exe sap2txt.exe wasap.exe in_asap.dll xmp-asap.dll bass_asap.dll apokeysnd.dll ASAPShellEx.dll foo_asap.dll libasap_plugin.dll)
+	$(addprefix win32/,asapconv.exe sap2txt.exe wasap.exe in_asap.dll xmp-asap.dll bass_asap.dll apokeysnd.dll ASAPShellEx.dll foo_asap.dll libasap_plugin.dll signed)
 	$(LIGHT) -ext WixUIExtension -sice:ICE69 -b win32 -b release -b $(srcdir)win32/setup -b $(srcdir)win32 $<
 
 win32/setup/asap.wixobj: $(srcdir)win32/setup/asap.wxs release/release.mk
@@ -254,9 +257,17 @@ CLEAN += win32/setup/asap.wixobj
 
 release/asap-$(VERSION)-win64.msi: win32/x64/asap.wixobj \
 	$(call src,win32/wasap/wasap.ico win32/setup/license.rtf win32/setup/asap-banner.jpg win32/setup/asap-dialog.jpg win32/shellex/ASAPShellEx.propdesc) \
-	win32/x64/ASAPShellEx.dll win32/x64/libasap_plugin.dll
+	win32/x64/ASAPShellEx.dll win32/x64/libasap_plugin.dll win32/signed
 	$(LIGHT) -ext WixUIExtension -sice:ICE69 -b win32 -b $(srcdir)/win32/setup -b $(srcdir)win32 $<
 
 win32/x64/asap.wixobj: $(srcdir)win32/setup/asap.wxs release/release.mk
 	$(CANDLE) -arch x64 -dVERSION=$(VERSION) $<
 CLEAN += win32/x64/asap.wixobj
+
+win32/signed: $(addprefix win32/,asapconv.exe sap2txt.exe wasap.exe in_asap.dll xmp-asap.dll bass_asap.dll apokeysnd.dll ASAPShellEx.dll foo_asap.dll libasap_plugin.dll x64/ASAPShellEx.dll x64/libasap_plugin.dll)
+	$(DO_SIGN)
+CLEAN += win32/signed
+
+release/signed-msi: release/asap-$(VERSION)-win32.msi release/asap-$(VERSION)-win64.msi
+	$(DO_SIGN)
+CLEAN += release/signed-msi

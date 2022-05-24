@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="net.sf.asap" android:versionCode="501" android:versionName="5.0.1" android:installLocation="auto">
-	<uses-sdk android:minSdkVersion="19" android:targetSdkVersion="28" />
+	package="net.sf.asap" android:versionCode="520" android:versionName="5.2.0" android:installLocation="auto">
+	<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="29" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-	<application android:label="@string/app_name" android:icon="@drawable/icon" android:description="@string/app_description" android:theme="@style/Theme">
+	<application android:label="@string/app_name" android:icon="@drawable/icon" android:description="@string/app_description" android:theme="@style/Theme" android:requestLegacyExternalStorage="true">
 		<activity android:name=".ArchiveSelector" android:label="@string/app_name">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
@@ -39,11 +39,6 @@
 			</intent-filter>
 		</activity>
 		<provider android:name=".ArchiveSuggestionsProvider" android:authorities="net.sf.asap.ArchiveSuggestionsProvider" />
-		<service android:name=".PlayerService" android:label="@string/player_service" />
-		<receiver android:name=".MediaButtonEventReceiver">
-			<intent-filter>
-				<action android:name="android.intent.action.MEDIA_BUTTON" />
-			</intent-filter>
-		</receiver>
+		<service android:name=".PlayerService" />
 	</application>
 </manifest>
