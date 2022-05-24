@@ -19,6 +19,11 @@ CASAPCodec::~CASAPCodec()
     ASAP_Delete(ctx.asap);
 }
 
+bool CASAPCodec::SupportsFile(const std::string& filename)
+{
+  return ASAPInfo_IsOurFile(filename.c_str());
+}
+
 bool CASAPCodec::Init(const std::string& filename,
                       unsigned int filecache,
                       int& channels,

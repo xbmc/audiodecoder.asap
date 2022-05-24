@@ -32,6 +32,7 @@ public:
   CASAPCodec(const kodi::addon::IInstanceInfo& instance);
   virtual ~CASAPCodec();
 
+  bool SupportsFile(const std::string& filename) override;
   bool Init(const std::string& filename,
             unsigned int filecache,
             int& channels,
