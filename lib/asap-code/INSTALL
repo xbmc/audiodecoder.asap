@@ -96,7 +96,7 @@ Building the XMMS plugin on Unix-like systems
 You need 'xmms' and 'xmms-devel' packages.
 Compile:
 
-   make asap-xmms
+    make asap-xmms
 
 Install the plugin in your home directory:
 
@@ -108,6 +108,19 @@ or for all users:
 
 If you have another XMMS plugin that supports Atari 8-bit music,
 remove it in order to avoid conflicts.
+
+
+Building the XMMS2 plugin on Unix-like systems
+----------------------------------------------
+
+You need the 'xmms2-devel' package.
+Compile:
+
+    make asap-xmms2
+
+Install the plugin for all users:
+
+    sudo make install-xmms2
 
 
 Building asapconv, WASAP, Winamp/XMPlay/BASS plugins, RMT DLL,
@@ -128,7 +141,7 @@ Building the foobar2000 plugin on Windows
 
 In addition to the common prerequisites you need:
 1. A Microsoft C++ compiler and a Windows SDK.
-   I use Visual Studio Community 2019.
+   I use Visual Studio Community 2022.
 2. foobar2000 SDK (http://www.foobar2000.org/SDK).
    Extract it to a new directory called 'foobar2000_SDK'
    next to (not inside!) the ASAP directory.
@@ -173,7 +186,6 @@ Open the command prompt in the root directory of ASAP sources and run:
     make android-debug
 
 AndroidASAP integrates with file managers.
-It reads phone state only to pause playback on incoming phone calls.
 
 
 Building C# ASAP2WAV and asapplay on Windows
@@ -192,8 +204,27 @@ Open the command prompt in the root directory of ASAP sources and run:
     make javascript
 
 'asap2wav.js' is the command-line script.
-'asapweb.js' plus 'asap.js' are the browser player
-(you'll probably need 'binaryHttpRequest.js' as well).
+'asapweb.js' plus 'asap.js' are the browser player.
+
+
+Building Python command-line ASAP2WAV
+-------------------------------------
+
+Open the command prompt in the root directory of ASAP sources and run:
+
+    make python
+
+'asap2wav.py' together with 'asap.py' are the command-line script.
+
+
+Building Swift command-line ASAP2WAV
+------------------------------------
+
+Install Swift (https://swift.org/download/).
+
+Open the command prompt in the root directory of ASAP sources and run:
+
+    make swift
 
 
 Using asapconv

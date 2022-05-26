@@ -18,7 +18,7 @@
 		<author name="Kostas Nakos" email="knakos@gmail.com">Windows CE testing.</author>
 		<author name="Petri Pyy" email="laskipeto@gmail.com">macOS releases.</author>
 		<author name="Mariusz Rozwadowski" rip="true">Suggested CMS, CM3, DLT and STIL format support.</author>
-		<author name="Sławomir Śledz" email="slaves@scene.pl">Windows Mobile setup. Thorough testing.</author>
+		<author name="Sławomir Śledź" email="slaves@scene.pl">Windows Mobile setup. Thorough testing.</author>
 		<author name="David Spilka">6502 routine for playing CMS.</author>
 		<author name="Radek Štěrba" rip="true">6502 routine for playing RMT. Testing.</author>
 		<author name="Łukasz Sychowicz" email="xray@scene.pl">Windows icons. Testing.</author>
@@ -43,7 +43,7 @@
 	<p>ASAP is based on a development library, which you can easily embed in your program.
 	It's not only a fully portable C library - it's better than that.
 	Since ASAP is written in <a href="https://github.com/pfusik/cito">Ć</a>,
-	it is also available as pure C++, Java, C# and JavaScript.</p>
+	it is also available as pure C++, C#, Java, JavaScript, Python, Swift and OpenCL.</p>
 
 	<h2>Third-party projects using ASAP</h2>
 	<p>The following projects already use ASAP:</p>
@@ -59,5 +59,7 @@
 		<li><a href="http://mxplay.atari.org/">mxPlay</a> - audio player for Atari Falcon</li>
 		<li><a href="https://github.com/epi/enotracker">enotracker</a> - POKEY music editor for PC</li>
 		<li><a href="http://www.wothke.ch/webasap/">WebAsap</a> - HTML5/WebAudio port</li>
+		<li><a href="https://zxtune.bitbucket.io/">ZXTune</a> - AY/SID/POKEY player for Windows/macOS/Linux/Android</li>
+		<li><a href="https://github.com/1ucasvb/pokey2midi">POKEY2MIDI</a> - converter to MIDI music files</li>
 	</ul>
 </page>

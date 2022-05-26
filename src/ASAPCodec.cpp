@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005-2021 Team Kodi (https://kodi.tv)
+ *  Copyright (C) 2005-2022 Team Kodi (https://kodi.tv)
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
  *  See LICENSE.md for more information.
@@ -19,6 +19,11 @@ CASAPCodec::~CASAPCodec()
     ASAP_Delete(ctx.asap);
 }
 
+bool CASAPCodec::SupportsFile(const std::string& filename)
+{
+  return ASAPInfo_IsOurFile(filename.c_str());
+}
+
 bool CASAPCodec::Init(const std::string& filename,
                       unsigned int filecache,
                       int& channels,
@@ -30,7 +35,7 @@ bool CASAPCodec::Init(const std::string& filename,
                       std::vector<AudioEngineChannel>& channellist)
 {
   int track = 0;
-  std::string toLoad = kodi::addon::CInstanceAudioDecoder::GetTrack("asap", filename, track);
+  const std::string toLoad = kodi::addon::CInstanceAudioDecoder::GetTrack("asap", filename, track);
 
   kodi::vfs::CFile file;
   if (!file.OpenFile(toLoad, 0))
@@ -64,7 +69,7 @@ bool CASAPCodec::Init(const std::string& filename,
     channellist = {AUDIOENGINE_CH_FL, AUDIOENGINE_CH_FR};
   bitrate = 0;
 
-  ASAP_PlaySong(ctx.asap, track, totaltime);
+  ASAP_PlaySong(ctx.asap, (track > 0 ? track - 1 : 0), totaltime);
 
   return true;
 }

@@ -1,5 +1,5 @@
 Name: asap
-Version: 5.0.1
+Version: 5.2.0
 Release: 1
 Summary: Player of Atari 8-bit music
 License: GPLv2+
@@ -22,17 +22,6 @@ Group: Development/Libraries
 %description devel
 These are the files needed for compiling programs that use libasap.
 
-%package xmms
-Summary: ASAP plugin for XMMS
-Group: Applications/Multimedia
-Requires: xmms
-BuildRequires: xmms-devel
-
-%description xmms
-Provides playback of Atari 8-bit music in XMMS.
-Supports the following file formats:
-SAP, CMC, CM3, CMR, CMS, DMC, DLT, MPT, MPD, RMT, TMC, TM8, TM2, FC.
-
 %package vlc
 Summary: ASAP plugin for VLC
 Group: Applications/Multimedia
@@ -43,17 +32,26 @@ BuildRequires: vlc-devel
 Provides playback of Atari 8-bit music in VLC.
 Supports the following file formats: SAP, RMT, FC.
 
+%package xmms2
+Summary: ASAP plugin for XMMS2
+Group: Applications/Multimedia
+Requires: xmms2
+BuildRequires: xmms2-devel
+
+%description xmms2
+Provides playback of Atari 8-bit music (SAP format) in XMMS2.
+
 %global debug_package %{nil}
 
 %prep
 %setup -q
 
 %build
-make asapconv libasap.a asap-xmms asap-vlc
+make asapconv libasap.a asap-vlc asap-xmms2
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make DESTDIR=$RPM_BUILD_ROOT prefix=%{_prefix} install install-xmms install-vlc
+make DESTDIR=$RPM_BUILD_ROOT prefix=%{_prefix} libdir=%{_libdir} install install-vlc install-xmms2
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -67,15 +65,25 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/asap.h
 %{_libdir}/libasap.a
 
-%files xmms
-%defattr(-,root,root)
-%{_libdir}/xmms/Input/libasap-xmms.so
-
 %files vlc
 %defattr(-,root,root)
 %{_libdir}/vlc/plugins/demux/libasap_plugin.so
 
+%files xmms2
+%defattr(-,root,root)
+%{_libdir}/xmms2/libxmms_asap.so
+
 %changelog
+* Wed Dec 8 2021 Piotr Fusik <fox@scene.pl>
+- 5.2.0-1
+
+* Tue Nov 30 2021 Piotr Fusik <fox@scene.pl>
+- Added the XMMS2 subpackage
+- Removed the XMMS subpackage
+
+* Fri Jul 9 2021 Piotr Fusik <fox@scene.pl>
+- 5.1.0-1
+
 * Sun Jan 19 2020 Piotr Fusik <fox@scene.pl>
 - 5.0.1-1
 

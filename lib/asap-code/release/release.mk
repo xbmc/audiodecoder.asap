@@ -5,7 +5,7 @@ GREP = @grep -H
 
 # no user-configurable paths below this line
 
-VERSION = 5.0.1
+VERSION = 5.2.0
 
 ifndef DO
 $(error Use "Makefile" instead of "release.mk")
@@ -14,9 +14,8 @@ endif
 dist: \
 	release/asap-$(VERSION)-android.apk \
 	release/asap-$(VERSION)-web.zip \
-	release/asap-$(VERSION)-win32.msi \
 	release/asap-$(VERSION)-win32.zip \
-	release/asap-$(VERSION)-win64.msi \
+	release/signed-msi \
 	release/foo_asap-$(VERSION).fb2k-component \
 	srcdist
 .PHONY: dist
@@ -38,14 +37,22 @@ release/asap-$(VERSION)-web.zip: release/COPYING.txt \
 	$(MAKEZIP)
 
 release/asap-$(VERSION)-win32.zip: release/COPYING.txt \
-	$(addprefix win32/,asapconv.exe asapscan.exe wasap.exe in_asap.dll foo_asap.dll apokeysnd.dll xmp-asap.dll bass_asap.dll ASAPShellEx.dll libasap_plugin.dll)
+	$(addprefix win32/,asapconv.exe asapscan.exe wasap.exe in_asap.dll foo_asap.dll apokeysnd.dll xmp-asap.dll bass_asap.dll ASAPShellEx.dll libasap_plugin.dll signed)
 	$(MAKEZIP)
 
-release/foo_asap-$(VERSION).fb2k-component: win32/foo_asap.dll
+release/foo_asap-$(VERSION).fb2k-component: win32/foo_asap.dll win32/signed
 	$(MAKEZIP)
 
 release/asap-$(VERSION)-macos.dmg: release/osx/libasap_plugin.dylib release/osx/plugins release/osx/asapconv release/osx/bin
+ifdef PORK_CODESIGNING_IDENTITY
+	codesign --options runtime -f -s $(PORK_CODESIGNING_IDENTITY) release/osx/libasap_plugin.dylib
+	codesign --options runtime -f -s $(PORK_CODESIGNING_IDENTITY) release/osx/asapconv
+endif
 	$(DO)hdiutil create -volname asap-$(VERSION)-macos -srcfolder release/osx -format UDBZ -fs HFS+ -imagekey bzip2-level=3 -ov $@
+ifdef PORK_NOTARIZING_CREDENTIALS
+	xcrun altool --notarize-app --primary-bundle-id net.sf.asap $(PORK_NOTARIZING_CREDENTIALS) --file $@ \
+		| perl -pe 's/^RequestUUID =/xcrun altool $$ENV{PORK_NOTARIZING_CREDENTIALS} --notarization-info/ or next; $$c = $$_; until (/Status: success/) { sleep 20; $$_ = `$$c`; print; } last;'
+endif
 
 release/osx/libasap_plugin.dylib: libasap_plugin.dylib
 	$(DO)strip -o $@ -x $< && chmod 644 $@
@@ -57,7 +64,7 @@ release/osx/plugins:
 release/osx/asapconv: $(call src,asapconv.c asap.[ch])
 	$(OSX_CC)
 
-release/osx/bin: 
+release/osx/bin:
 	$(DO)ln -s /usr/local/bin $@
 
 deb:
@@ -67,20 +74,26 @@ deb:
 deb64:
 	scp release/asap-$(VERSION).tar.gz vm:.
 	ssh vm 'rm -rf asap-$(VERSION) && tar xf asap-$(VERSION).tar.gz && make -C asap-$(VERSION) deb'
-	scp vm:asap{,-dev,-vlc}_$(VERSION)-1_amd64.deb release/
+	scp vm:asap_$(VERSION)-1_amd64.deb release/
+	scp vm:asap-dev_$(VERSION)-1_amd64.deb release/
+	scp vm:asap-vlc_$(VERSION)-1_amd64.deb release/
+	scp vm:asap-xmms2_$(VERSION)-1_amd64.deb release/
 .PHONY: deb64
 
 rpm64:
 	scp release/asap-$(VERSION).tar.gz vm:.
 	ssh vm 'rpmbuild -tb asap-$(VERSION).tar.gz'
-	scp vm:rpmbuild/RPMS/x86_64/asap{,-devel,-vlc,-xmms}-$(VERSION)-1.x86_64.rpm release/
+	scp vm:rpmbuild/RPMS/x86_64/asap-$(VERSION)-1.x86_64.rpm release/
+	scp vm:rpmbuild/RPMS/x86_64/asap-devel-$(VERSION)-1.x86_64.rpm release/
+	scp vm:rpmbuild/RPMS/x86_64/asap-vlc-$(VERSION)-1.x86_64.rpm release/
+	scp vm:rpmbuild/RPMS/x86_64/asap-xmms2-$(VERSION)-1.x86_64.rpm release/
 .PHONY: rpm64
 
-rpm32:
-	scp release/asap-$(VERSION).tar.gz vm:.
-	ssh vm 'rpmbuild -tb asap-$(VERSION).tar.gz'
-	scp vm:rpmbuild/RPMS/i686/asap{,-devel,-vlc,-xmms}-$(VERSION)-1.i686.rpm release/
-.PHONY: rpm32
+mac:
+	scp release/asap-$(VERSION).tar.gz mac:.
+	ssh mac 'security unlock-keychain ~/Library/Keychains/login.keychain && rm -rf asap-$(VERSION) && tar xf asap-$(VERSION).tar.gz && make -C asap-$(VERSION) release/asap-$(VERSION)-macos.dmg'
+	scp mac:asap-$(VERSION)/release/asap-$(VERSION)-macos.dmg release/
+.PHONY: mac
 
 release/COPYING.txt: $(srcdir)COPYING
 	$(UNIX2DOS)

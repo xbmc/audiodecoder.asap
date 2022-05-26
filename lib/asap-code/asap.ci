@@ -1,6 +1,6 @@
 // asap.ci - emulation engine
 //
-// Copyright (C) 2010-2019  Piotr Fusik
+// Copyright (C) 2010-2021  Piotr Fusik
 //
 // This file is part of ASAP (Another Slight Atari Player),
 // see http://asap.sourceforge.net
@@ -504,6 +504,7 @@ public class ASAP
 		PutLittleEndian(buffer, offset + 4, value2);
 	}
 
+#if !OPENCL
 	static int PutWavMetadata(byte[]! buffer, int offset, int fourCC, string value)
 	{
 		int len = value.Length;
@@ -519,6 +520,7 @@ public class ASAP
 		}
 		return offset;
 	}
+#endif
 
 	/// Fills leading bytes of the specified buffer with WAV file header.
 	/// Returns the number of changed bytes.
@@ -547,6 +549,7 @@ public class ASAP
 		buffer[34] = 8 << use16bit;
 		buffer[35] = 0;
 		int i = 36;
+#if !OPENCL
 		if (metadata) {
 			int year = ModuleInfo.GetYear();
 			if (ModuleInfo.GetTitle().Length > 0 || ModuleInfo.GetAuthor().Length > 0 || year > 0) {
@@ -566,6 +569,7 @@ public class ASAP
 				PutLittleEndians(buffer, 36, FourCC("LIST"), i - 44);
 			}
 		}
+#endif
 		PutLittleEndians(buffer, 0, FourCC("RIFF"), i + nBytes);
 		PutLittleEndians(buffer, i, FourCC("data"), nBytes);
 		return i + 8;
@@ -575,7 +579,7 @@ public class ASAP
 	{
 		if (SilenceCycles > 0 && SilenceCyclesCounter <= 0)
 			return 0;
-		int blockShift = (ModuleInfo.GetChannels() - 1) + (format != ASAPSampleFormat.U8 ? 1 : 0);
+		int blockShift = ModuleInfo.GetChannels() - (format == ASAPSampleFormat.U8 ? 1 : 0);
 		int bufferBlocks = bufferLen >> blockShift;
 		if (CurrentDuration > 0) {
 			int totalBlocks = MillisecondsToBlocks(CurrentDuration);

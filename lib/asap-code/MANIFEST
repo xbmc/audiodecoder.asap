@@ -55,6 +55,7 @@ csharp/asapplay.cs
 csharp/csharp.mk
 debian/asap-dev.install
 debian/asap-vlc.install
+debian/asap-xmms2.install
 debian/asap.install
 debian/changelog
 debian/compat
@@ -74,7 +75,6 @@ java/android/FileInfo.java
 java/android/FileSelector.java
 java/android/Indexer.java
 java/android/JavaAATR.java
-java/android/MediaButtonEventReceiver.java
 java/android/Player.java
 java/android/PlayerService.java
 java/android/Util.java
@@ -99,10 +99,17 @@ javascript/asapweb.js
 javascript/javascript.mk
 moc/libasap_decoder.c
 moc/moc.mk
+opencl/asap2wav-kernel.cl
+opencl/asapcl.cpp
+opencl/opencl.mk
 pokey.ci
+python/asap2wav.py
+python/python.mk
 release/release.mk
 sap2ntsc.c
 sap2txt.c
+swift/main.swift
+swift/swift.mk
 test/RESULTS.xml
 test/RESULTS.xsl
 test/antic_nmien.asx
@@ -191,3 +198,6 @@ www/www.xsl
 xmms/libasap-xmms.c
 xmms/libasap-xmms.map
 xmms/xmms.mk
+xmms2/libxmms_asap.c
+xmms2/xmms2.mk
+xmms2/xmms_configuration.h

@@ -137,27 +137,27 @@ void ASAPInfo_Delete(ASAPInfo *self);
 /**
  * ASAP version - minor part.
  */
-#define ASAPInfo_VERSION_MINOR 0
+#define ASAPInfo_VERSION_MINOR 2
 
 /**
  * ASAP version - micro part.
  */
-#define ASAPInfo_VERSION_MICRO 1
+#define ASAPInfo_VERSION_MICRO 0
 
 /**
  * ASAP version as a string.
  */
-#define ASAPInfo_VERSION "5.0.1"
+#define ASAPInfo_VERSION "5.2.0"
 
 /**
  * Years ASAP was created in.
  */
-#define ASAPInfo_YEARS "2005-2020"
+#define ASAPInfo_YEARS "2005-2021"
 
 /**
  * Short credits for ASAP.
  */
-#define ASAPInfo_CREDITS "Another Slight Atari Player (C) 2005-2020 Piotr Fusik\nCMC, MPT, TMC, TM2 players (C) 1994-2005 Marcin Lewandowski\nRMT player (C) 2002-2005 Radek Sterba\nDLT player (C) 2009 Marek Konopka\nCMS player (C) 1999 David Spilka\nFC player (C) 2011 Jerzy Kut\n"
+#define ASAPInfo_CREDITS "Another Slight Atari Player (C) 2005-2021 Piotr Fusik\nCMC, MPT, TMC, TM2 players (C) 1994-2005 Marcin Lewandowski\nRMT player (C) 2002-2005 Radek Sterba\nDLT player (C) 2009 Marek Konopka\nCMS player (C) 1999 David Spilka\nFC player (C) 2011 Jerzy Kut\n"
 
 /**
  * Short license notice.
@@ -180,6 +180,35 @@ void ASAPInfo_Delete(ASAPInfo *self);
  * Maximum number of songs in a file.
  */
 #define ASAPInfo_MAX_SONGS 32
+
+/**
+ * Returns the number of milliseconds represented by the given string.
+ * @param s Time in the <code>"mm:ss.xxx"</code> format.
+ */
+int ASAPInfo_ParseDuration(const char *s);
+
+/**
+ * Checks whether the filename represents a module type supported by ASAP.
+ * Returns <code>true</code> if the filename is supported by ASAP.
+ * @param filename Filename to check the extension of.
+ */
+bool ASAPInfo_IsOurFile(const char *filename);
+
+/**
+ * Checks whether the filename extension represents a module type supported by ASAP.
+ * Returns <code>true</code> if the filename extension is supported by ASAP.
+ * @param ext Filename extension without the leading dot.
+ */
+bool ASAPInfo_IsOurExt(const char *ext);
+
+/**
+ * Loads file information.
+ * @param self This <code>ASAPInfo</code>.
+ * @param filename Filename, used to determine the format.
+ * @param module Contents of the file.
+ * @param moduleLen Length of the file.
+ */
+bool ASAPInfo_Load(ASAPInfo *self, const char *filename, uint8_t const *module, int moduleLen);
 
 /**
  * Returns author's name.
@@ -224,28 +253,30 @@ const char *ASAPInfo_GetTitleOrFilename(const ASAPInfo *self);
 
 /**
  * Returns music creation date.
- * Some of the possible formats are:
+ * 
+ * <p>Some of the possible formats are:
  * <ul>
  * <li>YYYY</li>
  * <li>MM/YYYY</li>
  * <li>DD/MM/YYYY</li>
  * <li>YYYY-YYYY</li>
  * </ul>
- * An empty string means the date is unknown.
+ * <p>An empty string means the date is unknown.
  * @param self This <code>ASAPInfo</code>.
  */
 const char *ASAPInfo_GetDate(const ASAPInfo *self);
 
 /**
  * Sets music creation date.
- * Some of the possible formats are:
+ * 
+ * <p>Some of the possible formats are:
  * <ul>
  * <li>YYYY</li>
  * <li>MM/YYYY</li>
  * <li>DD/MM/YYYY</li>
  * <li>YYYY-YYYY</li>
  * </ul>
- * An empty string means the date is unknown.
+ * <p>An empty string means the date is unknown.
  * @param self This <code>ASAPInfo</code>.
  * @param value New music creation date.
  */
@@ -317,12 +348,12 @@ bool ASAPInfo_SetDuration(ASAPInfo *self, int song, int duration);
 
 /**
  * Returns information whether the specified song loops.
- * Returns:
+ * 
+ * <p>Returns:
  * <ul>
  * <li><code>true</code> if the song loops</li>
  * <li><code>false</code> if the song stops</li>
  * </ul>
- * 
  * @param self This <code>ASAPInfo</code>.
  * @param song Song to check for looping, 0-based.
  */
@@ -330,12 +361,12 @@ bool ASAPInfo_GetLoop(const ASAPInfo *self, int song);
 
 /**
  * Sets information whether the specified song loops.
- * Use:
+ * 
+ * <p>Use:
  * <ul>
  * <li><code>true</code> if the song loops</li>
  * <li><code>false</code> if the song stops</li>
  * </ul>
- * 
  * @param self This <code>ASAPInfo</code>.
  * @param song Song to set as looping, 0-based.
  * @param loop <code>true</code> if the song loops.
@@ -403,7 +434,7 @@ int ASAPInfo_GetPlayerAddress(const ASAPInfo *self);
 int ASAPInfo_GetCovoxAddress(const ASAPInfo *self);
 
 /**
- * Retturns the length of the SAP header in bytes.
+ * Returns the length of the SAP header in bytes.
  * @param self This <code>ASAPInfo</code>.
  */
 int ASAPInfo_GetSapHeaderLength(const ASAPInfo *self);
@@ -416,35 +447,6 @@ int ASAPInfo_GetSapHeaderLength(const ASAPInfo *self);
  * @param moduleLen Length of the RMT file.
  */
 int ASAPInfo_GetInstrumentNamesOffset(const ASAPInfo *self, uint8_t const *module, int moduleLen);
-
-/**
- * Returns the number of milliseconds represented by the given string.
- * @param s Time in the <code>"mm:ss.xxx"</code> format.
- */
-int ASAPInfo_ParseDuration(const char *s);
-
-/**
- * Checks whether the filename represents a module type supported by ASAP.
- * Returns <code>true</code> if the filename is supported by ASAP.
- * @param filename Filename to check the extension of.
- */
-bool ASAPInfo_IsOurFile(const char *filename);
-
-/**
- * Checks whether the filename extension represents a module type supported by ASAP.
- * Returns <code>true</code> if the filename extension is supported by ASAP.
- * @param ext Filename extension without the leading dot.
- */
-bool ASAPInfo_IsOurExt(const char *ext);
-
-/**
- * Loads file information.
- * @param self This <code>ASAPInfo</code>.
- * @param filename Filename, used to determine the format.
- * @param module Contents of the file.
- * @param moduleLen Length of the file.
- */
-bool ASAPInfo_Load(ASAPInfo *self, const char *filename, uint8_t const *module, int moduleLen);
 
 /**
  * Returns human-readable description of the filename extension.

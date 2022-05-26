@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005-2021 Team Kodi (https://kodi.tv)
+ *  Copyright (C) 2005-2022 Team Kodi (https://kodi.tv)
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
  *  See LICENSE.md for more information.
@@ -32,6 +32,7 @@ public:
   CASAPCodec(const kodi::addon::IInstanceInfo& instance);
   virtual ~CASAPCodec();
 
+  bool SupportsFile(const std::string& filename) override;
   bool Init(const std::string& filename,
             unsigned int filecache,
             int& channels,

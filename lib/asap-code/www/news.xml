@@ -1,4 +1,34 @@
 ﻿<page title="News">
+	<release version="5.2.0" date="2021-12-08">
+		<ul>
+			<li>Fixed "click" glitches. Depending on the music and the ASAP port, they were happening every dozen of seconds or not at all.</li>
+			<li>New XMMS2 plugin. Ubuntu and Fedora packages available.</li>
+			<li>Experimental OpenCL port running on a GPU.</li>
+			<li>Limited memory allocations on loading SAP files.</li>
+			<li>foobar2000: Minor stability fix for parallel conversions.</li>
+		</ul>
+		<ul title="Android">
+			<li>Control playback from the notification and the lock screen.</li>
+			<li>Voice assistant commands (such as "pause playback", "next song", "seek to one minute"). No voice search yet.</li>
+			<li>Display metadata and control playback via Bluetooth.</li>
+			<li>Pause playback on Bluetooth disconnected.</li>
+			<li>Requires Android 5.0+.</li>
+		</ul>
+	</release>
+
+	<release version="5.1.0" date="2021-07-09">
+		<ul>
+			<li>Android app includes the current state of the <a href="http://asma.scene.pl">ASMA repo</a>.</li>
+			<li>Fixed memory leaks in the BASS/AIMP plugin.</li>
+			<li>Unicode filenames in Windows Explorer.</li>
+			<li>Fixed "-ft" in chksap.</li>
+			<li>SAP filenames shown in TortoiseMerge.</li>
+			<li>Windows and macOS binaries are now signed.</li>
+			<li>Pure Python and Swift ASAP2WAVs.</li>
+			<li>JavaScript ASAP2WAV supports Node.js, drops support for DMDScript and JScript.</li>
+		</ul>
+	</release>
+
 	<release version="5.0.1" date="2020-01-19">
 		<ul>
 			<li>Android: search by author.</li>

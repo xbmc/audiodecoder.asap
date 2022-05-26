@@ -165,9 +165,7 @@ static void updateTech(void)
 {
 	char buf[16000];
 	char *p = buf;
-	const char *ext;
-	int type;
-	ext = ASAPInfo_GetOriginalModuleExt(edited_info, saved_module, saved_module_len);
+	const char *ext = ASAPInfo_GetOriginalModuleExt(edited_info, saved_module, saved_module_len);
 	if (ext != NULL)
 		p += sprintf(p, "Composed in %s\r\n", ASAPInfo_GetExtDescription(ext));
 	int i = ASAPInfo_GetSongs(edited_info);
@@ -179,7 +177,7 @@ static void updateTech(void)
 	}
 	p += sprintf(p, ASAPInfo_GetChannels(edited_info) > 1 ? "STEREO\r\n" : "MONO\r\n");
 	p += sprintf(p, ASAPInfo_IsNtsc(edited_info) ? "NTSC\r\n" : "PAL\r\n");
-	type = ASAPInfo_GetTypeLetter(edited_info);
+	int type = ASAPInfo_GetTypeLetter(edited_info);
 	if (type != 0)
 		p += sprintf(p, "TYPE %c\r\n", type);
 	p += sprintf(p, "FASTPLAY %d (%d Hz)\r\n", ASAPInfo_GetPlayerRateScanlines(edited_info), ASAPInfo_GetPlayerRateHz(edited_info));
@@ -194,12 +192,11 @@ static void updateTech(void)
 	if (i >= 0) {
 		while (p < buf + sizeof(buf) - 17 && i + 4 < saved_module_len) {
 			int start = saved_module[i] + (saved_module[i + 1] << 8);
-			int end;
 			if (start == 0xffff) {
 				i += 2;
 				start = saved_module[i] + (saved_module[i + 1] << 8);
 			}
-			end = saved_module[i + 2] + (saved_module[i + 3] << 8);
+			int end = saved_module[i + 2] + (saved_module[i + 3] << 8);
 			p += sprintf(p, "LOAD %04X-%04X\r\n", start, end);
 			i += 5 + end - start;
 		}
@@ -219,11 +216,9 @@ static void updateStil(void)
 	p = appendStil(p, "Song comment: ", ASTIL_GetSongComment(astil));
 	for (int i = 0; ; i++) {
 		const ASTILCover *cover = ASTIL_GetCover(astil, i);
-		int startSeconds;
-		const char *s;
 		if (cover == NULL)
 			break;
-		startSeconds = ASTILCover_GetStartSeconds(cover);
+		int startSeconds = ASTILCover_GetStartSeconds(cover);
 		if (startSeconds >= 0) {
 			int endSeconds = ASTILCover_GetEndSeconds(cover);
 			if (endSeconds >= 0)
@@ -233,15 +228,13 @@ static void updateStil(void)
 		}
 		else
 			*p++ = 'C';
-		s = ASTILCover_GetTitleAndSource(cover);
+		const char *s = ASTILCover_GetTitleAndSource(cover);
 		p = appendStil(p, "overs: ", s[0] != '\0' ? s : "<?>");
 		p = appendStil(p, "by ", ASTILCover_GetArtist(cover));
 		p = appendStil(p, "Comment: ", ASTILCover_GetComment(cover));
 	}
 	*p = '\0';
 	chomp(buf);
-#if 1
-	/* not compatible with Windows 9x */
 	if (ASTIL_IsUTF8(astil)) {
 		WCHAR wBuf[16000];
 		if (MultiByteToWideChar(CP_UTF8, 0, buf, -1, wBuf, 16000) > 0) {
@@ -249,7 +242,6 @@ static void updateStil(void)
 			return;
 		}
 	}
-#endif
 	SendDlgItemMessage(infoDialog, IDC_STILINFO, WM_SETTEXT, 0, (LPARAM) buf);
 }
 
@@ -270,33 +262,10 @@ static void setEditedSong(int song)
 	updateStil();
 }
 
-static void showEditTip(int nID, LPCTSTR title, LPCTSTR message)
+static void showEditTip(int nID, LPCWSTR title, LPCWSTR message)
 {
-#ifndef _UNICODE
-
-#ifndef EM_SHOWBALLOONTIP
-/* missing in MinGW */
-typedef struct
-{
-	DWORD cbStruct;
-	LPCWSTR pszTitle;
-	LPCWSTR pszText;
-	INT ttiIcon;
-} EDITBALLOONTIP;
-#define TTI_ERROR  3
-#define EM_SHOWBALLOONTIP  0x1503
-#endif
-	WCHAR wTitle[64];
-	WCHAR wMessage[64];
-	EDITBALLOONTIP ebt = { sizeof(EDITBALLOONTIP), wTitle, wMessage, TTI_ERROR };
-	if (MultiByteToWideChar(CP_ACP, 0, title, -1, wTitle, 64) <= 0
-	 || MultiByteToWideChar(CP_ACP, 0, message, -1, wMessage, 64) <= 0
-	 || !SendDlgItemMessage(infoDialog, nID, EM_SHOWBALLOONTIP, 0, (LPARAM) &ebt))
-
-#endif /* _UNICODE */
-
-		/* Windows before XP don't support balloon tips */
-		MessageBox(infoDialog, message, title, MB_OK | MB_ICONERROR);
+	EDITBALLOONTIP ebt = { sizeof(EDITBALLOONTIP), title, message, TTI_ERROR };
+	SendDlgItemMessage(infoDialog, nID, EM_SHOWBALLOONTIP, 0, (LPARAM) &ebt);
 }
 
 static bool isExt(LPCTSTR filename, LPCTSTR ext)
@@ -350,7 +319,7 @@ static void updateInfoString(HWND hDlg, int nID, int mask, bool (*func)(ASAPInfo
 	bool ok = func(edited_info, str);
 	updateSaveButtons(mask, ok);
 	if (!ok)
-		showEditTip(nID, _T("Invalid characters"), _T("Avoid national characters and quotation marks"));
+		showEditTip(nID, L"Invalid characters", L"Avoid national characters and quotation marks");
 }
 
 static LRESULT CALLBACK MonthCalWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -600,7 +569,7 @@ static INT_PTR CALLBACK infoDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 		case MAKEWPARAM(IDC_TIME, EN_KILLFOCUS):
 			if ((invalid_fields & INVALID_FIELD_TIME_SHOW) != 0) {
 				invalid_fields &= ~INVALID_FIELD_TIME_SHOW;
-				showEditTip(IDC_TIME, _T("Invalid format"), _T("Please type MM:SS.mmm"));
+				showEditTip(IDC_TIME, L"Invalid format", L"Please type MM:SS.mmm");
 			}
 			return TRUE;
 		case MAKEWPARAM(IDC_LOOP, BN_CLICKED):

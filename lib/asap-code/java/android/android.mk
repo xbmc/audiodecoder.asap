@@ -1,14 +1,12 @@
-ASMA_DIR = ../asma
+ASMA_DIR = ../aasma/asma
 ANDROID_SDK = C:/Users/fox/AppData/Local/Android/Sdk
-ANDROID_JAR = $(ANDROID_SDK)/platforms/android-28/android.jar
-ANDROID_BUILD_TOOLS = $(ANDROID_SDK)/build-tools/28.0.3
-PROGUARD_JAR = $(ANDROID_SDK)/tools/proguard/lib/proguard.jar
+ANDROID_JAR = $(ANDROID_SDK)/platforms/android-31/android.jar
+ANDROID_BUILD_TOOLS = $(ANDROID_SDK)/build-tools/30.0.2
 
 JAVA = $(DO)java
 AAPT = $(ANDROID_BUILD_TOOLS)/aapt
-DX = $(DO)java -jar "$(ANDROID_BUILD_TOOLS)/lib/dx.jar" --no-strict
-PROGUARD = $(DO)java -jar $(PROGUARD_JAR)
-JARSIGNER = $(DO)jarsigner -sigalg SHA1withRSA -digestalg SHA1
+D8 = $(DO)java -cp "$(ANDROID_BUILD_TOOLS)/lib/d8.jar" com.android.tools.r8.D8
+JARSIGNER = $(DO)$(JAVA_SDK)/bin/jarsigner -sigalg SHA1withRSA -digestalg SHA1
 ZIPALIGN = $(DO)$(ANDROID_BUILD_TOOLS)/zipalign
 ADB = $(ANDROID_SDK)/platform-tools/adb
 ANDROID = $(ANDROID_SDK)/tools/android.bat
@@ -28,7 +26,7 @@ endif
 
 ANDROID_RELEASE = release/asap-$(VERSION)-android.apk
 ANDROID_JAVA_SRC = $(addprefix $(srcdir)java/android/, AATRFileInputStream.java ArchiveSelector.java ArchiveSuggestionsProvider.java BaseSelector.java \
-	FileContainer.java FileInfo.java FileSelector.java JavaAATR.java MediaButtonEventReceiver.java Player.java PlayerService.java Util.java ZipInputStream.java)
+	FileContainer.java FileInfo.java FileSelector.java JavaAATR.java Player.java PlayerService.java Util.java ZipInputStream.java)
 
 android-release: $(ANDROID_RELEASE)
 .PHONY: android-release
@@ -85,17 +83,11 @@ java/android/AndroidASAP-unsigned.apk: java/android/AndroidASAP-resources.apk ja
 CLEAN += java/android/AndroidASAP-unsigned.apk
 
 java/android/classes.dex: java/android/classes/net/sf/asap/Player.class
-	$(DX) --dex --output=$@ java/android/classes
+	$(D8) --release --output $(@D) --lib $(ANDROID_JAR) `ls java/android/classes/net/sf/asap/*.class`
 CLEAN += java/android/classes.dex
 
-#java/android/classes.dex: java/android/classes.jar
-#	$(DX) --dex --output=$@ $<
-
-java/android/classes.jar: $(srcdir)java/android/proguard.cfg java/android/classes/net/sf/asap/Player.class
-	$(PROGUARD) -injars java/android/classes -outjars $@ -libraryjars $(ANDROID_JAR) @$<
-
 java/android/classes/net/sf/asap/Player.class: $(ANDROID_JAVA_SRC) java/android/AndroidASAP-resources.apk java/src/net/sf/asap/ASAP.java
-	$(JAVAC) -d java/android/classes -source 1.7 -target 1.7 -bootclasspath $(ANDROID_JAR) $(ANDROID_JAVA_SRC) java/android/gen/net/sf/asap/R.java java/src/net/sf/asap/*.java
+	$(JAVAC) -d java/android/classes --release 11 -cp $(ANDROID_JAR) -Xlint:deprecation $(ANDROID_JAVA_SRC) java/android/gen/net/sf/asap/R.java java/src/net/sf/asap/*.java
 CLEANDIR += java/android/classes
 
 # Also generates java/android/gen/net/sf/asap/R.java
