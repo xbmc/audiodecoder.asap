@@ -75,6 +75,7 @@
     <summary lang="pl_PL">ASAP - Another Slight Atari Player</summary>
     <summary lang="ru_RU">ASAP - Another Slight Atari Player</summary>
     <summary lang="sk_SK">ASAP (Another Slight Atari Player)</summary>
+    <summary lang="tr_TR">ASAP -Bir Başka Hafif Atari Oyuncusu</summary>
     <summary lang="zh_CN">ASAP - 另一个轻量级雅达利播放器</summary>
     <description lang="ca_ES">ASAP (Another Slight Atari Player) es reprodueix a Kodi i converteix música Atari de 8 bits (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) en ordinadors i dispositius mòbils moderns.</description>
     <description lang="da_DK">ASAP (Another Slight Atari Player) afspiller i Kodi og konverterer 8-bit Atari-musik ( *.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) på moderne computere og mobile enheder.</description>
@@ -91,6 +92,7 @@
     <description lang="pl_PL">ASAP (Another Slight Atari Player) odtwarza na Kodi i konwertuje 8-bitową muzykę Atari (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) na nowoczesnych komputerach i urządzeniach mobilnych.</description>
     <description lang="ru_RU">ASAP (Another Slight Atari Player) воспроизводит в Kodi и конвертирует 8-битную музыку Atari (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) на современных компьютерах и мобильных устройствах.</description>
     <description lang="sk_SK">ASAP (Another Slight Atari Player) prehráva a konvertuje na Kodi 8-bitovú hudbu Atari (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) na moderných počítačoch a mobilných zariadeniach.</description>
+    <description lang="tr_TR">ASAP (Another Slight Atari Player/Bir Başka Hafif Atari Oyuncusu) Kodi&apos;de 8-bit Atari müziğini (*.sap, *.cmc, *.mpt, *.rmt, *.tmc, ...) modern bilgisayarlarda ve mobil cihazlarda oynatır ve dönüştürür</description>
     <description lang="zh_CN">ASAP（Another Slight Atari Player，另一个轻量级雅达利播放器）在 Kodi 上播放，并在现代计算机和移动设备上转换8位雅达利音乐（*.sap、*.cmc、*.mpt、*.rmt、*.tmc等）。</description>
   </extension>
 </addon>
